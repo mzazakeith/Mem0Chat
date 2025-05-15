@@ -89,7 +89,7 @@ The application uses the `mem0ai` JavaScript SDK to interact with the Mem0 Platf
     OPENROUTER_API_KEY="your_openrouter_api_key"
 
     # Google API Key 
-    # GOOGLE_GENERATIVE_AI_API_KEY="your_google_api_key"
+    GOOGLE_GENERATIVE_AI_API_KEY="your_google_api_key"
     ```
     *   Obtain your `MEM0_API_KEY` and `MEM0_PROJECT_ID` from your [Mem0.ai dashboard](https://mem0.ai/).
     *   Obtain your `OPENROUTER_API_KEY` from your [OpenRouter dashboard](https://openrouter.ai/).
