@@ -1,4 +1,4 @@
-# Memory Tester - AI Chat with Persistent Memory
+# Mem0Chat - AI Chat with Persistent Memory
 
 This project is a Next.js application demonstrating an AI chat interface with a persistent memory layer powered by [Mem0.ai](https://mem0.ai/). It allows users to have conversations with various AI models, where the AI can recall information from previous interactions to provide more personalized and context-aware responses.
 
