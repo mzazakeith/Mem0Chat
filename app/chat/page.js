@@ -375,21 +375,21 @@ export default function ChatPage() {
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="w-64 md:w-72 lg:w-80 flex flex-col border-r bg-muted/40 h-full"
+          className="w-64 md:w-72 lg:w-80 flex flex-col border-r border-border bg-card shadow-lg h-full"
         >
-          <div className="p-4 flex justify-between items-center border-b">
-            <h2 className="text-xl font-semibold">Chat History</h2>
-            <Button variant="ghost" size="icon" onClick={sidebarNewChatClick} title="New Chat">
+          <div className="px-4 py-5 flex justify-between items-center border-b border-border">
+            <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
+            <Button variant="ghost" size="icon" onClick={sidebarNewChatClick} title="New Chat" className="hover:bg-primary/10 hover:text-primary">
               <PlusSquare className="h-5 w-5" />
             </Button>
           </div>
-          <div className="p-2 border-b">
+          <div className="p-3 border-b border-border"> {/* Slightly less padding for search bar container, consider removing border if input has enough emphasis */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search chats..."
-                className="w-full rounded-lg bg-background pl-8 h-9"
+                className="w-full rounded-lg bg-background pl-8 h-9" // bg-background for input to stand out on bg-card
                 value={chatSearchTerm}
                 onChange={(e) => setChatSearchTerm(e.target.value)}
               />
@@ -414,13 +414,13 @@ export default function ChatPage() {
                 key={session.id}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-3 m-2 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors ${
-                  activeChatId === session.id ? 'bg-purple-500/20 font-bold' : ''
+                className={`p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${
+                  activeChatId === session.id ? 'bg-primary text-primary-foreground font-semibold' : 'hover:bg-muted'
                 }`}
                 onClick={() => handleSelectChat(session.id)}
               >
-                <div className="flex justify-between items-center">
-                    <span className="truncate pr-2" title={session.title}>{session.title}</span>
+                <div className="flex justify-between items-center w-full">
+                    <span className="truncate pr-2 min-w-0" title={session.title}>{session.title}</span>
                     <Button 
                         variant="ghost" 
                         size="icon" 
@@ -436,19 +436,19 @@ export default function ChatPage() {
           </ScrollArea>
 
           {/* Sidebar Footer */}
-          <div className="p-3 border-t mt-auto flex flex-col space-y-3">
+          <div className="p-4 border-t border-border mt-auto flex flex-col space-y-3">
             {/* Global Memory Toggle Row */}
             <div className="flex items-center justify-between w-full p-1 rounded">
-              <Label htmlFor="global-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium">
-                <Brain className="h-5 w-5 mr-2 text-primary/80" />
+              <Label htmlFor="global-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
+                <Brain className="h-5 w-5 mr-2 text-primary" /> {/* Icon color from primary */}
                 Global Memories
               </Label>
               <div className="flex items-center space-x-2">
                 <span
                   className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
                     globalMemoriesActive
-                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      ? 'bg-primary/20 text-primary' // Updated pill colors
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {globalMemoriesActive ? 'Active' : 'Inactive'}
@@ -458,48 +458,48 @@ export default function ChatPage() {
                   checked={globalMemoriesActive}
                   onCheckedChange={handleToggleGlobalMemories}
                   aria-label="Toggle global memories"
-                  className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200"
+                  // className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Default primary will be used
                 />
               </div>
             </div>
             
             {/* Theme Toggle Row */}
-            <div className="flex items-center justify-center w-full"> 
+            <div className="flex items-center justify-center w-full pt-2"> 
               <ThemeToggle />
             </div>
           </div>
 
-          <Button className="md:hidden m-2" onClick={() => setIsSidebarOpen(false)}>Close</Button>
+          <Button className="md:hidden m-2" variant="outline" onClick={() => setIsSidebarOpen(false)}>Close</Button>
         </motion.div>
       )}
       </AnimatePresence>
 
       {/* Main Chat Area */} 
       <div className="flex flex-col flex-grow h-full min-w-0"> {/* Added min-w-0 here for flex-grow */}
-        <header className="p-4 border-b shadow-sm flex items-center justify-between">
+        <header className="px-6 py-5 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-w-0"> {/* Added min-w-0 for title truncation */}
             {!isSidebarOpen && (
-                <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setIsSidebarOpen(true)}>
+                <Button variant="ghost" size="icon" className="mr-2 md:hidden hover:bg-primary/10 hover:text-primary" onClick={() => setIsSidebarOpen(true)}>
                     <MessageSquare className="h-5 w-5" />
                 </Button>
             )}
-            <h1 className="text-xl md:text-2xl font-semibold truncate">
+            <h1 className="text-xl md:text-2xl font-semibold truncate text-foreground">
               {activeChatId ? chatSessions.find(s => s.id === activeChatId)?.title : 'AI Chat'}
             </h1>
           </div>
           {/* Per-Chat Memory Toggle - Styled like sidebar's global toggle */}
           {activeChatId && (
-            <div className="flex items-center space-x-2 p-1 rounded"> {/* Mimic sidebar item padding/rounding for container */}
-              <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium">
-                <Brain className="h-5 w-5 mr-2 text-primary/80" /> {/* Icon */}
-                Chat Memories {/* Changed from "Use Memories" for consistency if desired, or keep "Use Memories" */}
+            <div className="flex items-center space-x-2 p-1 rounded">
+              <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
+                <Brain className="h-5 w-5 mr-2 text-primary" />
+                Chat Memories
               </Label>
-              <div className="flex items-center space-x-2"> {/* Container for pill and switch */}
+              <div className="flex items-center space-x-2">
                 <span
                   className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
                     useChatMemories
-                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      ? 'bg-primary/20 text-primary' // Updated pill colors
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {useChatMemories ? 'Active' : 'Inactive'}
@@ -508,16 +508,16 @@ export default function ChatPage() {
                   id="chat-memory-toggle"
                   checked={useChatMemories}
                   onCheckedChange={handleToggleChatMemories}
-                  disabled={!globalMemoriesActive} // Disable if global memories are off
+                  disabled={!globalMemoriesActive} 
                   title={globalMemoriesActive ? "Toggle memory usage for this chat" : "Global memories are disabled"}
-                  className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Using same colors as global for now
+                  // className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Default primary will be used
                 />
               </div>
             </div>
           )}
         </header>
 
-        <ScrollArea className="flex-grow p-4 space-y-4 min-h-0" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-6 space-y-4 min-h-0" ref={scrollAreaRef}>
           <div className="flex flex-col space-y-4 pb-4">
             {isDbLoading && messages.length === 0 && (
                 <div className="flex-grow flex items-center justify-center h-full min-h-[calc(100vh-250px)]">
@@ -530,10 +530,10 @@ export default function ChatPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5 }}
-                      className="text-center p-8 bg-muted/30 rounded-lg shadow-sm"
+                      className="text-center p-8 bg-card rounded-lg shadow-md" // Use bg-card
                     >
                       <MessageSquare className="mx-auto h-12 w-12 mb-4 text-primary" />
-                      <h2 className="text-2xl font-semibold mb-2">Welcome to AI Chat!</h2>
+                      <h2 className="text-2xl font-semibold mb-2 text-foreground">Welcome to AI Chat!</h2>
                       <p className="text-muted-foreground mb-4">Select a chat from the sidebar or start a new one.</p>
                       <Button onClick={sidebarNewChatClick}>
                         <PlusSquare className="mr-2 h-5 w-5" /> New Chat
@@ -549,7 +549,7 @@ export default function ChatPage() {
                   transition={{ duration: 0.5 }}
                   className="text-center"
                 >
-                  <h2 className="text-2xl font-semibold mb-2">Conversation Cleared or Empty</h2>
+                  <h2 className="text-2xl font-semibold mb-2 text-foreground">Conversation Cleared or Empty</h2>
                   <p className="text-muted-foreground">Type a message to start the chat.</p>
                 </motion.div>
               </div>
@@ -560,22 +560,22 @@ export default function ChatPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`flex flex-col p-3 rounded-lg shadow-sm max-w-xl lg:max-w-2xl break-words whitespace-pre-wrap ${
+                className={`flex flex-col p-3 md:p-4 rounded-xl shadow-md max-w-xl lg:max-w-2xl break-words whitespace-pre-wrap ${
                   m.role === 'user'
                     ? 'bg-primary text-primary-foreground self-end ml-auto'
-                    : 'bg-card text-card-foreground self-start mr-auto border'
+                    : 'bg-card text-card-foreground self-start mr-auto border border-border/50'
                 }`}
               >
                 <span className="font-semibold capitalize pb-1">{m.role === 'user' ? 'You' : 'AI'}</span>
                 {m.content}
-                 {m.createdAt && <div className="text-xs opacity-60 pt-1 text-right">{new Date(m.createdAt).toLocaleTimeString()}</div>}
+                 {m.createdAt && <div className="text-xs opacity-75 pt-1 text-right">{new Date(m.createdAt).toLocaleTimeString()}</div>}
               </motion.div>
             ))}
             {isLoading && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center space-x-2 self-start mr-auto p-3 rounded-lg shadow-sm bg-muted text-muted-foreground max-w-xl lg:max-w-2xl border"
+                    className="flex items-center space-x-2 self-start mr-auto p-3 md:p-4 rounded-xl shadow-md bg-card text-card-foreground max-w-xl lg:max-w-2xl border border-border/50"
                 >
                     <span className="font-semibold capitalize">AI</span>
                     <div className="flex space-x-1">
@@ -589,7 +589,7 @@ export default function ChatPage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-red-600 p-3 rounded-lg bg-destructive/20 border border-destructive text-center my-4"
+                className="bg-destructive/10 text-destructive-foreground border border-destructive/30 p-4 rounded-lg text-center my-4"
               >
                 <p className="font-semibold">Error:</p>
                 <p>{apiError?.message || dbError}</p>
@@ -600,7 +600,7 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <footer className="p-4 border-t bg-background">
+        <footer className="px-6 py-4 border-t border-border bg-transparent"> {/* Or bg-muted/20 for subtle separation */}
           <form onSubmit={handleFormSubmit} className="flex items-center space-x-2">
             <Input
               className="flex-grow"

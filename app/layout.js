@@ -1,6 +1,6 @@
 import { Quicksand } from "next/font/google";
 import "./globals.css";
-import { ThemeProviderClientComponent } from "./components/ThemeProviderClientComponent";
+import { ThemeProviderClientComponent } from "../components/ThemeProviderClientComponent";
 
 const quicksand = Quicksand({
   subsets: ["latin"],
@@ -16,7 +16,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${quicksand.variable} font-sans antialiased`}>
+      <body className={`${quicksand.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProviderClientComponent
           attribute="class"
           defaultTheme="system"
