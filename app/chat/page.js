@@ -228,37 +228,57 @@ export default function ChatPage() {
     if (!input.trim() || !activeChatId || isLoading) return;
 
     const userMessageContent = input;
-    const currentChatId = activeChatId;
+    const currentChatId = activeChatId; // We might still need this if constructing message for local display or DB before append
 
-    const userMessage = {
+    // This object represents the core content of the user's message
+    const userMessageForDisplayAndHistory = {
         id: uuidv4(),
-        chatId: currentChatId,
+        chatId: currentChatId, // Useful for adding to local DB
         role: 'user',
         content: userMessageContent,
         createdAt: new Date()
     };
     
-    // Prepare the message payload for the AI SDK's append function
-    let messageToAppend = { ...userMessage };
-    
-    // Include memory-related flags if memories are active for this chat and globally
+    // This is the object that will be passed to append(). 
+    // For Vercel AI SDK, it should contain just the core message fields. 
+    // Extra data for the request body is handled by chatRequestOptions.
+    const messageToAppendToSDK = {
+        role: 'user',
+        content: userMessageContent,
+        // id and createdAt can be omitted if we let the SDK/server handle them for the actual stream,
+        // but useful if we want to immediately add a fully formed message to UI optimistically with our own ID.
+        // For simplicity with `sendExtraMessageFields` not behaving as intuitively expected, we ensure this object is clean.
+        // Let's keep id and createdAt for optimistic UI updates if useChat doesn't overwrite.
+        id: userMessageForDisplayAndHistory.id, 
+        createdAt: userMessageForDisplayAndHistory.createdAt
+    };
+
+    let chatRequestOptions = {};
+
     if (globalMemoriesActive && useChatMemories && mem0UserId) {
-      messageToAppend.experimental_customTool = {
-        userId: mem0UserId,
-        activateMemories: true // This flag will be picked up by the backend
+      // These fields will be sent at the top level of the request body
+      chatRequestOptions.body = {
+        experimental_customTool: {
+          userId: mem0UserId,
+          activateMemories: true
+        }
       };
     }
 
     handleInputChange({ target: { value: '' } }); 
-    append(messageToAppend); // New way with potential memory context
+    
+    // append the clean message, and provide chatRequestOptions for the body
+    append(messageToAppendToSDK, chatRequestOptions);
 
-    if (userMessage && currentChatId) {
+    // Save the full message (with our own chatId) to local DB immediately
+    if (userMessageForDisplayAndHistory && currentChatId) {
         try {
-            await addMessage(userMessage);
+            await addMessage(userMessageForDisplayAndHistory);
 
             const currentChat = chatSessions.find(c => c.id === currentChatId);
-            const messagesInUI = [...messages, userMessage]; // Include the new user message for count
-            const userMessagesInCurrentChatNow = messagesInUI.filter(m => m.role === 'user' && m.chatId === currentChatId);
+            // Use messages from useChat hook state + the new message for title generation logic
+            const messagesInUIForTitleCheck = [...messages, userMessageForDisplayAndHistory]; 
+            const userMessagesInCurrentChatNow = messagesInUIForTitleCheck.filter(m => m.role === 'user' && m.chatId === currentChatId);
 
             if (currentChat && currentChat.title === "New Chat" && userMessagesInCurrentChatNow.length === 1) {
                 // Fire-and-forget promise for title generation
@@ -267,7 +287,7 @@ export default function ChatPage() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ messageContent: userMessage.content }),
+                    body: JSON.stringify({ messageContent: userMessageForDisplayAndHistory.content }),
                 })
                 .then(async (titleResponse) => { // Add async here to use await inside
                     if (titleResponse.ok) {
