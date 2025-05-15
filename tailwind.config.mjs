@@ -8,10 +8,8 @@ const config = {
   ],
   theme: {
     extend: {
-      // Colors are now primarily defined in globals.css @theme
-      // fontFamily is now primarily defined in globals.css @theme for --font-sans
       borderRadius: {
-        lg: 'var(--radius)', // Will use --radius from @theme in globals.css
+        lg: 'var(--radius)', 
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },

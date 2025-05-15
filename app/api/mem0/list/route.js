@@ -22,13 +22,10 @@ export async function GET(req) {
     const mem0 = getMem0Client();
     const memories = await mem0.getAll({ user_id: userId });
     
-    // Mem0's getAll typically returns an object like { results: [...] } or similar structure.
-    // Ensure we are returning a structure the client expects, usually an array of memories.
-    // If mem0.getAll returns the array directly, then just `return NextResponse.json(memories, { status: 200 });`
-    // Assuming it returns an object with a `results` key containing the array as per Mem0 docs examples.
+  
     if (memories && Array.isArray(memories.results)) {
         return NextResponse.json(memories, { status: 200 });
-    } else if (Array.isArray(memories)) { // Fallback if it returns an array directly
+    } else if (Array.isArray(memories)) { 
         return NextResponse.json({ results: memories }, { status: 200 });
     } else {
         // Handle unexpected structure from Mem0

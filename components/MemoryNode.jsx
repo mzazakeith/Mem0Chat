@@ -12,14 +12,13 @@ const formatDate = (dateString) => {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   } catch (e) {
-    return dateString; // fallback
+    return dateString;
   }
 };
 
 const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, onFocus }) => {
   if (!memory) return null;
 
-  // Animation variants for Framer Motion
   const nodeVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: (custom) => ({ 
@@ -37,7 +36,7 @@ const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, 
     exit: { 
       opacity: 0, 
       scale: 0.9, 
-      x: -50, // Slide out to the left
+      x: -50, 
       transition: { duration: 0.3 }
     }
   };
@@ -50,8 +49,8 @@ const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, 
       animate="visible"
       exit="exit"
       layout
-      className="mb-4 relative cursor-pointer" // Added cursor-pointer
-      onClick={() => onFocus(memory.id)} // Call onFocus with this node's ID
+      className="mb-4 relative cursor-pointer" 
+      onClick={() => onFocus(memory.id)} 
     >
       {/* Delete Button - Top Right of the entire Node */}
       <Button
@@ -71,7 +70,7 @@ const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, 
           initial={{ height: 0, opacity: 0}}
           animate={{ 
             height: '1rem', 
-            opacity: isAnyFocused ? (isFocused ? 1 : 0.3) : 1, // Logic for connector based on isAnyFocused and isFocused
+            opacity: isAnyFocused ? (isFocused ? 1 : 0.3) : 1, 
             backgroundImage: isFocused ? 'linear-gradient(to bottom, hsl(var(--my-primary-hsl)), hsl(var(--my-primary-hsl) / 0.7))' : 'linear-gradient(to bottom, hsl(var(--my-border-hsl) / 0.3), hsl(var(--my-border-hsl) / 0.8))'
           }}
           transition={{ duration: 0.5, delay: index * 0.07 + 0.2 }}
@@ -80,10 +79,7 @@ const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, 
       )}
 
       <Card className={`group text-muted-foreground shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out rounded-lg overflow-hidden relative z-10 border-2 hover:border-primary/50 active:shadow-primary/20 active:shadow-inner ${isFocused ? 'border-primary' : 'border-transparent'} ${isFocused ? 'bg-primary/5' : 'bg-muted'}`}> 
-        {/* Changed bg-card to bg-muted, text-card-foreground to text-muted-foreground */}
-        {/* Added dynamic border and bg based on isFocused */}
         <CardContent className="p-3 pt-5 min-h-[60px] break-words whitespace-pre-wrap text-sm relative">
-          {/* Node Anchor Point */}
           <motion.div 
             className="absolute left-[calc(50%-4px)] top-[5px] w-2 h-2 rounded-full z-20 border-2 border-background shadow-sm"
             animate={{
@@ -96,12 +92,10 @@ const MemoryNode = ({ memory, onDelete, index, isLast, isFocused, isAnyFocused, 
           
           {memory.memory || memory.content}
 
-          {/* Date - Bottom Right (Floating) */}
           <span className="absolute bottom-1 right-2 text-[10px] text-muted-foreground/80">
             {formatDate(memory.created_at || memory.createdAt || memory.timestamp)}
           </span>
         </CardContent>
-        {/* CardFooter removed */}
       </Card>
     </motion.div>
   );

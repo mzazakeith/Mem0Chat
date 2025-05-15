@@ -14,7 +14,6 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    // Render a placeholder or null to avoid hydration mismatch
     return <div className="w-9 h-9" />;
   }
 

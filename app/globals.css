@@ -1,11 +1,11 @@
-/* Define raw HSL values for your palette */
+
 :root {
   --my-bg-hsl: 27 15% 95%;
   --my-fg-hsl: 27 14% 22%;
   --my-card-hsl: 27 15% 88%;
-  --my-card-fg-hsl: 27 14% 22%; /* Explicit card foreground */
-  --my-popover-hsl: 27 15% 85%; /* Explicit popover background */
-  --my-popover-fg-hsl: 27 14% 22%; /* Explicit popover foreground */
+  --my-card-fg-hsl: 27 14% 22%; 
+  --my-popover-hsl: 27 15% 85%; 
+  --my-popover-fg-hsl: 27 14% 22%; 
   --my-primary-hsl: 30 40% 37%;
   --my-primary-fg-hsl: 30 25% 94%;
   --my-secondary-hsl: 30 22% 49%;
@@ -27,9 +27,9 @@
   --my-bg-hsl: 27 14% 15%;
   --my-fg-hsl: 27 15% 85%;
   --my-card-hsl: 27 14% 22%;
-  --my-card-fg-hsl: 27 15% 85%; /* Explicit card foreground for dark */
-  --my-popover-hsl: 27 14% 20%; /* Explicit popover background for dark */
-  --my-popover-fg-hsl: 27 15% 85%; /* Explicit popover foreground for dark */
+  --my-card-fg-hsl: 27 15% 85%; 
+  --my-popover-hsl: 27 14% 20%; 
+  --my-popover-fg-hsl: 27 15% 85%; 
   --my-primary-hsl: 30 24% 54%;
   --my-primary-fg-hsl: 27 14% 15%;
   --my-secondary-hsl: 30 22% 49%;
@@ -45,9 +45,7 @@
   --my-ring-hsl: 30 24% 60%;
 }
 
-@import "tailwindcss"; /* This imports theme, base, components, utilities */
-/* Note: For Tailwind v4, @import "tailwindcss" includes @tailwind base, components, utilities and the default @theme.
-   Custom @theme definitions should ideally follow to extend or override. */
+@import "tailwindcss"; 
 
 @theme {
   --color-background: hsl(var(--my-bg-hsl));
@@ -71,15 +69,11 @@
   --color-ring: hsl(var(--my-ring-hsl));
   
   --radius: var(--my-radius-val);
-  --font-sans: var(--my-font-quicksand); /* Making Quicksand the default sans font */
+  --font-sans: var(--my-font-quicksand); 
 }
 
-/* Ensure body uses the Quicksand font by default through Tailwind's font-sans utility */
 body {
   font-family: var(--font-sans);
 }
 
-/* You might have tw-animate-css imported previously. 
-   If still needed, it should be imported. For now, focusing on core Tailwind.
-   @import "tw-animate-css"; 
-*/ 
+@import "tw-animate-css"; 

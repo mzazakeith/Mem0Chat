@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // For error messages
-import MemoryStream from './MemoryStream'; // Import the new MemoryStream component
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import MemoryStream from './MemoryStream'; 
 
 // Lucide Icons
 import { 
@@ -25,11 +24,8 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-// DB functions (client-side IndexedDB)
 import { replaceAllLocalMemoriesForUser } from '@/lib/db'; 
-// We might use getAllLocalMemories for initial optimistic load if desired later - for now, API is primary source after actions.
 
-// Helper to format date
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown date';
   try {
@@ -45,14 +41,11 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
   const [memories, setMemories] = useState([]);
   const [newMemoryInput, setNewMemoryInput] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isLoadingAdd, setIsLoadingAdd] = useState(false);
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
   const [isLoadingSync, setIsLoadingSync] = useState(false);
-  // Individual loading states for delete could be managed by adding an `isDeleting` map: {[memoryId]: true}
-
-  const [searchResults, setSearchResults] = useState(null); // null: not actively searching; []: empty results; array: results
+  const [searchResults, setSearchResults] = useState(null);
   const [error, setError] = useState(null);
 
   const displayedMemories = searchResults !== null ? searchResults : memories;
@@ -79,7 +72,7 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
       const data = await response.json();
       const memoriesFromApi = data.results || [];
       setMemories(memoriesFromApi);
-      await replaceAllLocalMemoriesForUser(userId, memoriesFromApi); // Update local DB
+      await replaceAllLocalMemoriesForUser(userId, memoriesFromApi);
     } catch (e) {
       console.error("Failed to fetch memories:", e);
       setError(e.message);
@@ -142,10 +135,9 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
       });
       if (!response.ok) {
         const errData = await response.json();
-        // setMemories(prevMemories); // Revert optimistic update
         throw new Error(errData.error || `Failed to delete memory (${response.status})`);
       }
-      const data = await response.json(); // API returns all memories
+      const data = await response.json();
       const allMemoriesFromApi = data.results || [];
       setMemories(allMemoriesFromApi);
       await replaceAllLocalMemoriesForUser(userId, allMemoriesFromApi);
@@ -153,8 +145,6 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
     } catch (e) {
       console.error("Failed to delete memory:", e);
       setError(e.message);
-      // If not doing optimistic updates, or if API failed after optimistic, ensure list is accurate:
-      // await fetchMemories(); // Or rely on the fact that the main list `memories` wasn't changed if error
     } finally {
       // Add specific loading state for this memory item if needed
     }
@@ -164,7 +154,7 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
   const handleSearchMemories = async (e) => {
     e.preventDefault();
     if (!searchInput.trim() || !userId) {
-      setSearchResults(null); // Clear search if input is empty
+      setSearchResults(null);
       return;
     }
 
@@ -181,7 +171,7 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
     } catch (e) {
       console.error("Failed to search memories:", e);
       setError(e.message);
-      setSearchResults([]); // Show empty search results on error
+      setSearchResults([]); 
     } finally {
       setIsLoadingSearch(false);
     }
@@ -209,11 +199,11 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
         const errData = await response.json();
         throw new Error(errData.error || `Failed to sync memories (${response.status})`);
       }
-      const data = await response.json(); // API returns all memories
+      const data = await response.json();
       const allMemoriesFromApi = data.results || [];
       setMemories(allMemoriesFromApi);
       await replaceAllLocalMemoriesForUser(userId, allMemoriesFromApi);
-      setSearchResults(null); // Clear search on sync
+      setSearchResults(null); 
     } catch (e) {
       console.error("Failed to sync memories:", e);
       setError(e.message);
@@ -293,9 +283,9 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
           />
           <Button 
             type="submit" 
-            size="default" // Default size to match textarea height
+            size="default" 
             variant="default"
-            className="aspect-square p-2.5" // Make it square, adjust padding for icon
+            className="aspect-square p-2.5"
             disabled={isLoadingAdd || !newMemoryInput.trim()}
             title="Add Memory"
           >

@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import MemoryNode from './MemoryNode';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const MemoryStream = ({ memories, onDelete }) => {
   const [focusedMemoryId, setFocusedMemoryId] = useState(null);
 
   if (!memories) {
-    return null; // Or some placeholder/loading state if preferred
+    return null; 
   }
 
   const handleNodeFocus = (memoryId) => {
@@ -18,8 +18,8 @@ const MemoryStream = ({ memories, onDelete }) => {
   const isAnyNodeFocused = focusedMemoryId !== null;
 
   return (
-    <div className="relative pt-2 pb-2"> {/* Add some padding for potential connector overhang */}
-      <AnimatePresence initial={false}> {/* initial={false} to prevent all items animating on first load if already present */}
+    <div className="relative pt-2 pb-2"> 
+      <AnimatePresence initial={false}> 
         {memories.map((memory, index) => (
           <MemoryNode 
             key={memory.id} 
