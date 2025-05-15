@@ -5,7 +5,7 @@ import { useChat } from 'ai/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, PlusSquare, Trash2, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbDeleteChat } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
@@ -26,6 +26,7 @@ export default function ChatPage() {
   const [mem0UserId, setMem0UserId] = useState(null);
   const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true); // Default to true
   const [useChatMemories, setUseChatMemories] = useState(false); // Default to false for per-chat memory usage
+  const [chatSearchTerm, setChatSearchTerm] = useState(''); // New state for chat search
 
   const { messages, setMessages, input, handleInputChange, isLoading, error: apiError, reload, stop, append }
     = useChat({
@@ -382,6 +383,18 @@ export default function ChatPage() {
               <PlusSquare className="h-5 w-5" />
             </Button>
           </div>
+          <div className="p-2 border-b">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search chats..."
+                className="w-full rounded-lg bg-background pl-8 h-9"
+                value={chatSearchTerm}
+                onChange={(e) => setChatSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
           {isDbLoading && chatSessions.length === 0 && (
             <div className="flex-grow flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -394,7 +407,9 @@ export default function ChatPage() {
                     No chats yet. Start a new one!
                 </div>
             )}
-            {chatSessions.map(session => (
+            {chatSessions
+              .filter(session => session.title.toLowerCase().includes(chatSearchTerm.toLowerCase()))
+              .map(session => (
               <motion.div
                 key={session.id}
                 initial={{ opacity: 0, y: -10 }}
