@@ -298,7 +298,7 @@ export default function ChatPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           )}
-          <ScrollArea className="flex-grow">
+          <ScrollArea className="flex-grow min-h-0">
             {chatSessions.length === 0 && !isDbLoading && (
                 <div className="p-4 text-center text-muted-foreground">
                     <MessageSquare className="mx-auto h-10 w-10 mb-2" />
@@ -311,7 +311,7 @@ export default function ChatPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={`p-3 m-2 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors ${
-                  activeChatId === session.id ? 'bg-primary/20 font-semibold' : ''
+                  activeChatId === session.id ? 'bg-purple-500/20 font-bold' : ''
                 }`}
                 onClick={() => handleSelectChat(session.id)}
               >
