@@ -5,36 +5,104 @@ import { useChat } from 'ai/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import {
+  Send,
+  PlusSquare,
+  Trash2,
+  MessageSquare,
+  Loader2,
+  Search,
+  PanelRightClose,
+  PanelRightOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings // Added Settings icon
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbDeleteChat } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
-import { ThemeToggle } from '@/components/ThemeToggle'; // Assuming components alias is to root/components
+import { v4 as uuidv4 } from 'uuid';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Brain } from 'lucide-react'; // Icon for memory toggle
-import MemoriesPanel from '@/components/MemoriesPanel'; // Import the new panel
+import { Brain } from 'lucide-react';
+import MemoriesPanel from '@/components/MemoriesPanel';
 
+// Model Configuration
+import { ALL_AVAILABLE_MODELS, getDefaultModelForUsage, getModelConfigById } from '@/lib/models';
+
+// ShadCN UI Select components
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ChatPage() {
   const [chatSessions, setChatSessions] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [dbError, setDbError] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on larger screens, can be toggled
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDbLoading, setIsDbLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [mem0UserId, setMem0UserId] = useState(null);
-  const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true); // Default to true
-  const [useChatMemories, setUseChatMemories] = useState(false); // Default to false for per-chat memory usage
-  const [chatSearchTerm, setChatSearchTerm] = useState(''); // New state for chat search
-  const [isMemoriesPanelOpen, setIsMemoriesPanelOpen] = useState(true); // New state for MemoriesPanel visibility
+  const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true);
+  // useChatMemories state removed, will be derived from active chat session or global default
+  const [chatSearchTerm, setChatSearchTerm] = useState('');
+  const [isMemoriesPanelOpen, setIsMemoriesPanelOpen] = useState(true); 
+
+  // New state for model selection
+  const [globalChatModelId, setGlobalChatModelId] = useState(() => getDefaultModelForUsage('chat'));
+  const [globalTitleModelId, setGlobalTitleModelId] = useState(() => getDefaultModelForUsage('title'));
+  
+  // Derived state for available models for chat and title
+  const [availableChatModels, setAvailableChatModels] = useState([]);
+  const [availableTitleModels, setAvailableTitleModels] = useState([]);
+
+  // Derived state for the current chat's memory setting (useChatMemories)
+  const currentChatSession = chatSessions.find(cs => cs.id === activeChatId);
+  const useChatMemories = currentChatSession?.useChatMemories || false;
+  const currentChatModelId = currentChatSession?.modelId || globalChatModelId;
+
+  // Initialize available models from the imported configuration
+  useEffect(() => {
+    setAvailableChatModels(ALL_AVAILABLE_MODELS.filter(m => m.usage.includes('chat')));
+    setAvailableTitleModels(ALL_AVAILABLE_MODELS.filter(m => m.usage.includes('title')));
+  }, []);
+
+  // Effect for loading model preferences from localStorage
+  useEffect(() => {
+    const storedGlobalChatModelId = localStorage.getItem('globalChatModelId');
+    if (storedGlobalChatModelId) {
+      setGlobalChatModelId(storedGlobalChatModelId);
+    } else {
+      localStorage.setItem('globalChatModelId', globalChatModelId); // Store default if not set
+    }
+
+    const storedGlobalTitleModelId = localStorage.getItem('globalTitleModelId');
+    if (storedGlobalTitleModelId) {
+      setGlobalTitleModelId(storedGlobalTitleModelId);
+    } else {
+      localStorage.setItem('globalTitleModelId', globalTitleModelId); // Store default if not set
+    }
+  }, []); // globalChatModelId, globalTitleModelId removed from deps to run once and set initial
 
   const { messages, setMessages, input, handleInputChange, isLoading, error: apiError, reload, stop, append }
     = useChat({
     api: '/api/chat',
-    id: activeChatId,
-    sendExtraMessageFields: true,
-    async onFinish(message) {
+    id: activeChatId, // This effectively makes useChat create a new instance when activeChatId changes
+    // We will pass the modelId within the body of the request using sendExtraMessageFields: true and options in append()
+    body: {
+        // This is where we would put data if `useChat` directly supported sending extra top-level fields
+        // with every request that are NOT part of the `messages` array. 
+        // However, `sendExtraMessageFields` works differently - it expects these extra fields on individual messages.
+        // So, we will pass `modelId` and `experimental_customTool` in the `options` argument of `append()` directly.
+    },
+    // sendExtraMessageFields: true, // We will handle extra fields in `append` options
+async onFinish(message) {
       if (activeChatId && message.role === 'assistant') {
         try {
           const aiMessageToSave = { 
@@ -65,6 +133,15 @@ export default function ChatPage() {
     async onResponse(response) {
       if (!response.ok) {
         console.error("API Error:", response.statusText);
+        // Potentially parse response.json() for more detailed error from our API routes
+        try {
+            const errorData = await response.json();
+            if (errorData.error) {
+                setDbError(`API Error: ${errorData.error}`); // Using dbError state for API errors too for simplicity here
+            }
+        } catch (e) {
+            // Ignore if not JSON
+        }
       }
     },
   });
@@ -78,10 +155,11 @@ export default function ChatPage() {
       id: newChatId, 
       title: 'New Chat', 
       timestamp: Date.now(),
-      useChatMemories: false // Default for new chats
+      useChatMemories: false, // Default per-chat memory setting
+      // modelId is not set here, it will use globalChatModelId by default
     };
     try {
-      await addChat(newChatSession); // addChat now uses put
+      await addChat(newChatSession); 
       setChatSessions(prevSessions => [newChatSession, ...prevSessions].sort((a,b) => b.timestamp - a.timestamp));
       if (makeActive) {
         setActiveChatId(newChatId);
@@ -94,19 +172,18 @@ export default function ChatPage() {
       setDbError("Could not create new chat.");
       return null;
     }
-  }, [setMessages]); // Added setMessages to dependencies as it's used indirectly
+  }, [setMessages]);
 
   const loadChatSessions = useCallback(async () => {
     setIsDbLoading(true);
     try {
       const sessions = await getAllChats();
-      setChatSessions(sessions.sort((a,b) => b.timestamp - a.timestamp)); // Ensure sorted
+      setChatSessions(sessions.sort((a,b) => b.timestamp - a.timestamp));
       if (sessions.length > 0) {
         if (!activeChatId && isInitialLoad) {
             setActiveChatId(sessions[0].id); 
         }
       } else if (isInitialLoad) {
-        // If no chats exist on initial load, create one and make it active
         await handleNewChat(true);
       }
       setDbError(null);
@@ -117,10 +194,9 @@ export default function ChatPage() {
       setIsDbLoading(false);
       setIsInitialLoad(false);
     }
-  }, [activeChatId, isInitialLoad, handleNewChat]); // handleNewChat is now a dependency
+  }, [activeChatId, isInitialLoad, handleNewChat]);
 
   useEffect(() => {
-    // Initialize Mem0 User ID
     let userId = localStorage.getItem('mem0_user_id');
     if (!userId) {
       userId = uuidv4();
@@ -128,12 +204,10 @@ export default function ChatPage() {
     }
     setMem0UserId(userId);
 
-    // Initialize Global Memories Active setting
     const storedGlobalMemoriesActive = localStorage.getItem('mem0_global_active');
     if (storedGlobalMemoriesActive !== null) {
       setGlobalMemoriesActive(JSON.parse(storedGlobalMemoriesActive));
     } else {
-      // Default to true if not set, and store it
       localStorage.setItem('mem0_global_active', JSON.stringify(true));
       setGlobalMemoriesActive(true);
     }
@@ -141,18 +215,18 @@ export default function ChatPage() {
 
   useEffect(() => {
     loadChatSessions();
-  }, [loadChatSessions]); // loadChatSessions will only change if its dependencies change
+  }, [loadChatSessions]);
 
   useEffect(() => {
     async function loadMessages() {
-      if (activeChatId && !isInitialLoad) { // Only load if not initial (initial load or new chat handles it)
+      if (activeChatId && !isInitialLoad) { 
         setIsDbLoading(true);
         try {
-          // Load chat session details to get useChatMemories preference
-          const currentChatSession = chatSessions.find(cs => cs.id === activeChatId);
-          if (currentChatSession) {
-            setUseChatMemories(currentChatSession.useChatMemories || false);
-          }
+          // const currentChatSessionDetails = chatSessions.find(cs => cs.id === activeChatId);
+          // if (currentChatSessionDetails) {
+          //   // setUseChatMemories(currentChatSessionDetails.useChatMemories || false);
+          //   // currentChatModelId is now derived, so no need to set from here directly
+          // }
 
           const savedMessages = await getMessagesForChat(activeChatId);
           const currentHookMessageIds = new Set(messages.map(m => m.id));
@@ -181,7 +255,7 @@ export default function ChatPage() {
     }
     if(activeChatId && !isInitialLoad) loadMessages();
     else if (!activeChatId) setMessages([]);
-  }, [activeChatId, setMessages, isInitialLoad]); // Added isInitialLoad
+  }, [activeChatId, setMessages, isInitialLoad, chatSessions]); // Added chatSessions as messages might depend on its modelId indirectly affecting system prompt logic if we were to rebuild that on client
 
   useEffect(() => {
     if (scrollAreaRef.current && !viewportRef.current) {
@@ -194,17 +268,12 @@ export default function ChatPage() {
   }, [messages]);
 
   const handleSelectChat = (chatId) => {
-    if (isLoading) stop(); // Stop any ongoing stream if switching chats
+    if (isLoading) stop(); 
     setActiveChatId(chatId);
-    // When selecting a chat, also load its useChatMemories preference
-    const selectedChat = chatSessions.find(cs => cs.id === chatId);
-    if (selectedChat) {
-      setUseChatMemories(selectedChat.useChatMemories || false);
-    }
   };
 
   const handleDeleteChat = async (chatIdToDelete, event) => {
-    event.stopPropagation(); // Prevent chat selection when clicking delete
+    event.stopPropagation();
     if (isLoading && activeChatId === chatIdToDelete) stop();
     try {
       await dbDeleteChat(chatIdToDelete);
@@ -230,127 +299,118 @@ export default function ChatPage() {
     if (!input.trim() || !activeChatId || isLoading) return;
 
     const userMessageContent = input;
-    const currentChatId = activeChatId; // We might still need this if constructing message for local display or DB before append
+    const currentChatIdForSubmit = activeChatId; // Capture activeChatId at submit time
 
-    // This object represents the core content of the user's message
     const userMessageForDisplayAndHistory = {
         id: uuidv4(),
-        chatId: currentChatId, // Useful for adding to local DB
+        chatId: currentChatIdForSubmit,
         role: 'user',
         content: userMessageContent,
         createdAt: new Date()
     };
     
-    // This is the object that will be passed to append(). 
-    // For Vercel AI SDK, it should contain just the core message fields. 
-    // Extra data for the request body is handled by chatRequestOptions.
     const messageToAppendToSDK = {
         role: 'user',
         content: userMessageContent,
-        // id and createdAt can be omitted if we let the SDK/server handle them for the actual stream,
-        // but useful if we want to immediately add a fully formed message to UI optimistically with our own ID.
-        // For simplicity with `sendExtraMessageFields` not behaving as intuitively expected, we ensure this object is clean.
-        // Let's keep id and createdAt for optimistic UI updates if useChat doesn't overwrite.
         id: userMessageForDisplayAndHistory.id, 
         createdAt: userMessageForDisplayAndHistory.createdAt
     };
 
-    let chatRequestOptions = {};
+    // Determine the modelId to use for this chat request
+    const activeSessionDetails = chatSessions.find(cs => cs.id === currentChatIdForSubmit);
+    const modelIdForApi = activeSessionDetails?.modelId || globalChatModelId;
+    
+    console.log(`[ChatPage] Submitting message with modelId: ${modelIdForApi}`);
 
-    if (globalMemoriesActive && useChatMemories && mem0UserId) {
-      // These fields will be sent at the top level of the request body
-      chatRequestOptions.body = {
-        experimental_customTool: {
-          userId: mem0UserId,
-          activateMemories: true
+    let chatRequestOptions = {
+        body: {
+            modelId: modelIdForApi, // Pass the resolved modelId
+            // Only include experimental_customTool if memories are active for this specific chat AND globally
+            ...(globalMemoriesActive && useChatMemories && mem0UserId && {
+                experimental_customTool: {
+                    userId: mem0UserId,
+                    activateMemories: true // This is true if useChatMemories is true for this chat
+                }
+            })
         }
-      };
-    }
+    };
 
     handleInputChange({ target: { value: '' } }); 
-    
-    // append the clean message, and provide chatRequestOptions for the body
     append(messageToAppendToSDK, chatRequestOptions);
 
-    // Save the full message (with our own chatId) to local DB immediately
-    if (userMessageForDisplayAndHistory && currentChatId) {
+    if (userMessageForDisplayAndHistory && currentChatIdForSubmit) {
         try {
             await addMessage(userMessageForDisplayAndHistory);
 
-            const currentChat = chatSessions.find(c => c.id === currentChatId);
-            // Use messages from useChat hook state + the new message for title generation logic
+            const currentChatForTitle = chatSessions.find(c => c.id === currentChatIdForSubmit);
             const messagesInUIForTitleCheck = [...messages, userMessageForDisplayAndHistory]; 
-            const userMessagesInCurrentChatNow = messagesInUIForTitleCheck.filter(m => m.role === 'user' && m.chatId === currentChatId);
+            const userMessagesInCurrentChatNow = messagesInUIForTitleCheck.filter(m => m.role === 'user' && m.chatId === currentChatIdForSubmit);
 
-            if (currentChat && currentChat.title === "New Chat" && userMessagesInCurrentChatNow.length === 1) {
-                // Fire-and-forget promise for title generation
+            if (currentChatForTitle && currentChatForTitle.title === "New Chat" && userMessagesInCurrentChatNow.length === 1) {
                 fetch('/api/generate-title', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ messageContent: userMessageForDisplayAndHistory.content }),
+                    body: JSON.stringify({
+                        messageContent: userMessageForDisplayAndHistory.content,
+                        modelId: globalTitleModelId // Pass the selected global title model ID
+                    }),
                 })
-                .then(async (titleResponse) => { // Add async here to use await inside
+                .then(async (titleResponse) => {
                     if (titleResponse.ok) {
                         const { title: newAiTitle } = await titleResponse.json();
                         if (newAiTitle) {
                             setChatSessions(prevSessions => {
                                 const updated = prevSessions.map(cs => 
-                                    cs.id === currentChatId ? { ...cs, title: newAiTitle, timestamp: Date.now() } : cs
+                                    cs.id === currentChatIdForSubmit ? { ...cs, title: newAiTitle, timestamp: Date.now() } : cs
                                 );
                                 return updated.sort((a,b) => b.timestamp - a.timestamp);
                             });
-                            // Intentionally not awaiting addChat here to keep the primary flow non-blocking
-                            // However, this means DB update for title is fire-and-forget too.
-                            // If DB consistency for title is paramount and failure needs handling, this could be awaited
-                            // but that might re-introduce a slight delay or require more complex state management
-                            // For a "quiet" update, this is usually acceptable.
-                            addChat({ id: currentChatId, title: newAiTitle, timestamp: Date.now() })
+                            // Update chat in DB with new title (and potentially modelId if we store it there too explicitly)
+                            // The existing addChat should handle timestamp updates if title changes
+                            addChat({ id: currentChatIdForSubmit, title: newAiTitle, timestamp: Date.now() })
                                 .catch(dbTitleError => console.error("Failed to save AI generated title to DB:", dbTitleError));
                         } else {
                              console.warn("AI title generation returned an empty title.");
                         }
                     } else {
-                        // Try to get error message from response, but don't let it crash
                         let errorDetail = titleResponse.statusText;
                         try {
                             const errorData = await titleResponse.json();
                             errorDetail = errorData?.error || errorDetail;
-                        } catch (e) {
-                            console.warn("Could not parse error JSON from title generation API");
+                        } catch (parseErr) {
+                            console.warn("Could not parse error JSON from title generation API", parseErr);
                         }
                         console.error("Failed to generate title via API:", titleResponse.status, errorDetail);
-                        // Not setting dbError to keep title generation failure quiet
+                        setDbError(`Title Gen Failed: ${errorDetail}`); // Show title gen error
                     }
                 })
                 .catch(titleError => {
                     console.error("Error calling title generation API:", titleError);
-                    // Not setting dbError to keep title generation failure quiet
+                    setDbError(`Title Gen Network Error: ${titleError.message}`); // Show network error for title gen
                 });
             }
         } catch (dbErr) {
-            console.error("Failed to save user message:", dbErr); // Clarified error source
+            console.error("Failed to save user message:", dbErr);
             setDbError("Failed to save your message. Please try again.");
         }
     }
   };
 
   const sidebarNewChatClick = async () => {
-    await handleNewChat(true); // Always make active when user clicks new chat button
+    await handleNewChat(true);
   }
 
   const handleToggleGlobalMemories = (checked) => {
     setGlobalMemoriesActive(checked);
     localStorage.setItem('mem0_global_active', JSON.stringify(checked));
-    // Here you might want to trigger a re-fetch or sync if memories were previously off and are now on
-    // For now, it just updates the state and local storage. The MemoriesPanel component will react to this prop change.
     console.log("Global memories active:", checked);
   };
 
   const handleToggleChatMemories = async (checked) => {
     if (!activeChatId) return;
-    setUseChatMemories(checked);
+    // useChatMemories is now derived, we update the source: chatSession object
     const currentChat = chatSessions.find(cs => cs.id === activeChatId);
     if (currentChat) {
       const updatedChatSession = { ...currentChat, useChatMemories: checked };
@@ -360,7 +420,39 @@ export default function ChatPage() {
       } catch (e) {
         console.error("Failed to update chat memory preference:", e);
         setDbError("Failed to save memory preference for this chat.");
-        setUseChatMemories(!checked); 
+        // Revert UI optimistically: We might not need to if `useChatMemories` is purely derived
+        // and `setChatSessions` fails, the source of truth (chatSessions) wouldn't have changed.
+      }
+    }
+  };
+
+  // Handlers for model selection changes
+  const handleGlobalChatModelChange = (newModelId) => {
+    setGlobalChatModelId(newModelId);
+    localStorage.setItem('globalChatModelId', newModelId);
+    console.log("Global chat model changed to:", newModelId);
+    // If there's an active chat that IS using the global default (i.e., no override),
+    // its effective model just changed. No direct action needed here as `currentChatModelId` is derived.
+  };
+
+  const handleGlobalTitleModelChange = (newModelId) => {
+    setGlobalTitleModelId(newModelId);
+    localStorage.setItem('globalTitleModelId', newModelId);
+    console.log("Global title model changed to:", newModelId);
+  };
+
+  const handlePerChatModelChange = async (newModelId) => {
+    if (!activeChatId) return;
+    const currentChat = chatSessions.find(cs => cs.id === activeChatId);
+    if (currentChat) {
+      const updatedChatSession = { ...currentChat, modelId: newModelId };
+      try {
+        await addChat(updatedChatSession); // This should update or add the modelId to the chat in DB
+        setChatSessions(prev => prev.map(cs => cs.id === activeChatId ? updatedChatSession : cs));
+        console.log(`Per-chat model for ${activeChatId} changed to:`, newModelId);
+      } catch (e) {
+        console.error("Failed to update per-chat model preference:", e);
+        setDbError("Failed to save model preference for this chat.");
       }
     }
   };
@@ -379,7 +471,7 @@ export default function ChatPage() {
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
           transition={{ type: 'spring', stiffness: 180, damping: 26, mass: 1.1 }}
-          className="w-64 md:w-72 lg:w-80 flex flex-col border-r border-border bg-card shadow-lg h-full relative"
+          className=" flex flex-col border-r border-border bg-card shadow-lg h-full relative"
         >
           <div className="px-4 py-5 flex justify-between items-center border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
@@ -445,18 +537,18 @@ export default function ChatPage() {
           </ScrollArea>
 
           {/* Sidebar Footer */}
-          <div className="p-4 border-t border-border mt-auto flex flex-col space-y-3">
+          <div className="p-4 border-t border-border mt-auto flex flex-col space-y-4">
             {/* Global Memory Toggle Row */}
             <div className="flex items-center justify-between w-full p-1 rounded">
               <Label htmlFor="global-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
-                <Brain className="h-5 w-5 mr-2 text-primary" /> {/* Icon color from primary */}
+                <Brain className="h-5 w-5 mr-2 text-primary" />
                 Global Memories
               </Label>
               <div className="flex items-center space-x-2">
                 <span
                   className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
                     globalMemoriesActive
-                      ? 'bg-primary/20 text-primary' // Updated pill colors
+                      ? 'bg-primary/20 text-primary'
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
@@ -467,9 +559,52 @@ export default function ChatPage() {
                   checked={globalMemoriesActive}
                   onCheckedChange={handleToggleGlobalMemories}
                   aria-label="Toggle global memories"
-                  // className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Default primary will be used
                 />
               </div>
+            </div>
+            
+            {/* Global Chat Model Selector */}
+            <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="global-chat-model-select" className="text-sm font-medium text-foreground flex items-center">
+                    <Settings className="h-4 w-4 mr-2 text-primary" /> Default Chat Model
+                </Label>
+                <Select value={globalChatModelId} onValueChange={handleGlobalChatModelChange}>
+                    <SelectTrigger id="global-chat-model-select" className="w-full h-9 text-sm">
+                        <SelectValue placeholder="Select default chat model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Available Chat Models</SelectLabel>
+                            {availableChatModels.map(model => (
+                                <SelectItem key={model.id} value={model.id} title={model.name}>
+                                    {model.name}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Global Title Model Selector */}
+            <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="global-title-model-select" className="text-sm font-medium text-foreground flex items-center">
+                    <Settings className="h-4 w-4 mr-2 text-primary" /> Default Title Model
+                </Label>
+                <Select value={globalTitleModelId} onValueChange={handleGlobalTitleModelChange}>
+                    <SelectTrigger id="global-title-model-select" className="w-full h-9 text-sm">
+                        <SelectValue placeholder="Select default title model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Available Title Models</SelectLabel>
+                            {availableTitleModels.map(model => (
+                                <SelectItem key={model.id} value={model.id} title={model.name}>
+                                    {model.name}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
             </div>
             
             {/* Theme Toggle Row */}
@@ -485,7 +620,7 @@ export default function ChatPage() {
 
       {/* Main Chat Area */} 
       <div className="flex flex-col flex-grow h-full min-w-0"> {/* Added min-w-0 here for flex-grow */}
-        <header className="px-6 py-5 border-b border-border shadow-sm flex items-center justify-between">
+        <header className="px-6 py-5 border-b border-border shadow-sm flex items-center justify-between space-x-4">
           <div className="flex items-center min-w-0"> {/* Added min-w-0 for title truncation */}
             {!isSidebarOpen && (
                 <Button variant="ghost" size="icon" className="mr-2 hover:bg-primary/10 hover:text-primary" onClick={() => setIsSidebarOpen(true)} title="Open Sidebar">
@@ -496,30 +631,56 @@ export default function ChatPage() {
               {activeChatId ? chatSessions.find(s => s.id === activeChatId)?.title : 'AI Chat'}
             </h1>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            {/* Per-Chat Model Selector - Only if a chat is active */}
+            {activeChatId && (
+              <div className="flex flex-col items-end w-52"> {/* Container for label and select */} 
+                {/* <Label htmlFor="per-chat-model-select" className="text-xs text-muted-foreground mb-0.5 whitespace-nowrap">
+                  Chat Model:
+                </Label> */} 
+                <Select value={currentChatModelId} onValueChange={handlePerChatModelChange} disabled={!activeChatId}>
+                    <SelectTrigger id="per-chat-model-select" className="h-9 text-sm"> {/* Removed w-full to allow shrink */} 
+                        <SelectValue placeholder="Select model for this chat" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Chat Model (Current Session)</SelectLabel>
+                            {availableChatModels.map(model => (
+                                <SelectItem key={model.id} value={model.id} title={model.name}>
+                                    {getModelConfigById(model.id)?.name || model.id} 
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Per-Chat Memory Toggle */}
             {activeChatId && (
               <div className="flex items-center space-x-2 p-1 rounded">
                 <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
-                  <Brain className="h-5 w-5 mr-2 text-primary" />
-                  Chat Memories
+                  <Brain className="h-5 w-5 mr-1 text-primary" />
+                  {/* Chat Memories - Removed text to save space */}
                 </Label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5">
                   <span
-                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    className={`px-1.5 py-0.5 text-xs font-semibold rounded-full ${
                       useChatMemories
                         ? 'bg-primary/20 text-primary'
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {useChatMemories ? 'Active' : 'Inactive'}
+                    {useChatMemories ? 'Mem: On' : 'Mem: Off'} {/* Shorter text */}
                   </span>
                   <Switch
                     id="chat-memory-toggle"
                     checked={useChatMemories}
                     onCheckedChange={handleToggleChatMemories}
                     disabled={!globalMemoriesActive} 
-                    title={globalMemoriesActive ? "Toggle memory usage for this chat" : "Global memories are disabled"}
+                    title={globalMemoriesActive ? "Toggle memory for this chat" : "Global memories disabled"}
+                    className="h-5 w-9 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground/30" // Smaller switch
+                    thumbClassName="h-4 w-4 data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0.5" // Adjust thumb
                   />
                 </div>
               </div>
