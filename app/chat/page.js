@@ -53,6 +53,14 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
+// ShadCN UI Tooltip components
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export default function ChatPage() {
   const [chatSessions, setChatSessions] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -486,7 +494,7 @@ async onFinish(message) {
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
           transition={{ type: 'spring', stiffness: 180, damping: 26, mass: 1.1 }}
-          className=" flex flex-col border-r border-border bg-card shadow-lg h-full relative"
+          className="w-64 md:w-72 lg:w-80 flex flex-col border-r border-border bg-card shadow-lg h-full relative"
         >
           <div className="px-4 py-5 flex justify-between items-center border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
@@ -553,54 +561,54 @@ async onFinish(message) {
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-border mt-auto flex flex-col space-y-4">
-            {/* Global Memory Toggle Row */}
-            <div className="flex items-center justify-between w-full p-1 rounded">
-              <Label htmlFor="global-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
-                <Brain className="h-5 w-5 mr-2 text-primary" />
-                Global Memories
-              </Label>
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                    globalMemoriesActive
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {globalMemoriesActive ? 'Active' : 'Inactive'}
-                </span>
-                <Switch
-                  id="global-memory-toggle"
-                  checked={globalMemoriesActive}
-                  onCheckedChange={handleToggleGlobalMemories}
-                  aria-label="Toggle global memories"
-                />
-              </div>
-            </div>
-
-            {/* Drawer for Model Settings */}
+            {/* Drawer for Default Settings */}
             <Drawer open={isModelSettingsDrawerOpen} onOpenChange={setIsModelSettingsDrawerOpen}>
               <DrawerTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-sm font-medium">
-                  <Settings className="h-4 w-4 mr-2" /> Default Model Settings
+                  <Settings className="h-4 w-4 mr-2" /> Default Settings
                 </Button>
               </DrawerTrigger>
-              <DrawerContent data-vaul-drawer-direction="bottom"> {/* Specify direction if needed, or let auto-detect */} 
+              <DrawerContent data-vaul-drawer-direction="bottom">
                 <div className="mx-auto w-full max-w-md p-4">
                   <DrawerHeader className="pb-2 px-0">
-                    <DrawerTitle>Default Model Configuration</DrawerTitle>
+                    <DrawerTitle>Default Settings</DrawerTitle>
                     <DrawerDescription>
-                      Set your preferred default models for new chats and title generation.
+                      Configure global default behaviors for your chat experience.
                     </DrawerDescription>
                   </DrawerHeader>
                   
                   <div className="space-y-4 py-4">
+                    {/* Global Memory Toggle Row  */}
+                    <div className="flex items-center justify-between w-full p-2 rounded border border-border/50 bg-background/20">
+                        <Label htmlFor="global-memory-toggle-drawer" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
+                            <Brain className="h-5 w-5 mr-2 text-primary" />
+                             Memories
+                        </Label>
+                        <div className="flex items-center space-x-2">
+                            <span
+                            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                globalMemoriesActive
+                                ? 'bg-primary/20 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                            >
+                            {globalMemoriesActive ? 'Active' : 'Inactive'}
+                            </span>
+                            <Switch
+                            id="global-memory-toggle-drawer" // Updated ID for drawer context
+                            checked={globalMemoriesActive}
+                            onCheckedChange={handleToggleGlobalMemories}
+                            aria-label="Toggle global memories"
+                            />
+                        </div>
+                    </div>
+
                     {/* Global Chat Model Selector */}
                     <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="global-chat-model-select-drawer" className="text-sm font-medium text-foreground flex items-center">
-                           Chat Model
+                           Default Chat Model
                         </Label>
-                        <Select value={globalChatModelId} onValueChange={handleGlobalChatModelChange}>
+                         <Select value={globalChatModelId} onValueChange={handleGlobalChatModelChange}>
                             <SelectTrigger id="global-chat-model-select-drawer" className="w-full h-9 text-sm">
                                 <SelectValue placeholder="Select default chat model" />
                             </SelectTrigger>
@@ -620,7 +628,7 @@ async onFinish(message) {
                     {/* Global Title Model Selector */}
                     <div className="flex flex-col space-y-1.5">
                         <Label htmlFor="global-title-model-select-drawer" className="text-sm font-medium text-foreground flex items-center">
-                            Title Generation Model
+                            Default Title Model
                         </Label>
                         <Select value={globalTitleModelId} onValueChange={handleGlobalTitleModelChange}>
                             <SelectTrigger id="global-title-model-select-drawer" className="w-full h-9 text-sm">
@@ -677,9 +685,6 @@ async onFinish(message) {
             {/* Per-Chat Model Selector - Only if a chat is active */}
             {activeChatId && (
               <div className="flex flex-col items-end w-52"> {/* Container for label and select */} 
-                {/* <Label htmlFor="per-chat-model-select" className="text-xs text-muted-foreground mb-0.5 whitespace-nowrap">
-                  Chat Model:
-                </Label> */} 
                 <Select value={currentChatModelId} onValueChange={handlePerChatModelChange} disabled={!activeChatId}>
                     <SelectTrigger id="per-chat-model-select" className="h-9 text-sm"> {/* Removed w-full to allow shrink */} 
                         <SelectValue placeholder="Select model for this chat" />
@@ -696,42 +701,6 @@ async onFinish(message) {
                     </SelectContent>
                 </Select>
               </div>
-            )}
-
-            {/* Per-Chat Memory Toggle */}
-            {activeChatId && (
-              <div className="flex items-center space-x-2 p-1 rounded">
-                <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
-                  <Brain className="h-5 w-5 mr-1 text-primary" />
-                  {/* Chat Memories - Removed text to save space */}
-                </Label>
-                <div className="flex items-center space-x-1.5">
-                  <span
-                    className={`px-1.5 py-0.5 text-xs font-semibold rounded-full ${
-                      useChatMemories
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {useChatMemories ? 'Mem: On' : 'Mem: Off'} {/* Shorter text */}
-                  </span>
-                  <Switch
-                    id="chat-memory-toggle"
-                    checked={useChatMemories}
-                    onCheckedChange={handleToggleChatMemories}
-                    disabled={!globalMemoriesActive} 
-                    title={globalMemoriesActive ? "Toggle memory for this chat" : "Global memories disabled"}
-                    className="h-5 w-9 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground/30" // Smaller switch
-                    thumbClassName="h-4 w-4 data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0.5" // Adjust thumb
-                  />
-                </div>
-              </div>
-            )}
-            {/* Memories Panel Toggle Button */}
-            {globalMemoriesActive && mem0UserId && (
-              <Button variant="ghost" size="icon" onClick={toggleMemoriesPanel} title={isMemoriesPanelOpen ? "Close Memories Panel" : "Open Memories Panel"} className="hover:bg-primary/10 hover:text-primary">
-                {isMemoriesPanelOpen ? <PanelRightClose className="h-5 w-5" /> : <PanelRightOpen className="h-5 w-5" />}
-              </Button>
             )}
           </div>
         </header>
@@ -821,6 +790,35 @@ async onFinish(message) {
 
         <footer className="px-6 py-4 border-t border-border bg-transparent"> {/* Or bg-muted/20 for subtle separation */}
           <form onSubmit={handleFormSubmit} className="flex items-center space-x-2">
+            {/* PER-CHAT MEMORY TOGGLE - WITH TOOLTIP */}
+            {activeChatId && globalMemoriesActive && ( 
+              <div className="flex items-center space-x-1.5 p-1 rounded mr-2">
+                <TooltipProvider delayDuration={300}> 
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor="chat-memory-toggle-footer" className="flex items-center cursor-pointer">
+                        <Brain className="h-5 w-5 text-primary flex-shrink-0" />
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={5}>
+                      <p className="text-xs">
+                        When active the model will consider your memories when responding.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Switch
+                  id="chat-memory-toggle-footer"
+                  checked={useChatMemories}
+                  onCheckedChange={handleToggleChatMemories}
+                  disabled={!globalMemoriesActive} 
+                  aria-labelledby="chat-memory-tooltip" 
+                />
+                <span className={`text-xs font-medium select-none ${useChatMemories ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {useChatMemories ? 'On' : 'Off'}
+                </span>
+              </div>
+            )}
             <Input
               className="flex-grow"
               value={input}
