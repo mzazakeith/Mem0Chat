@@ -11,16 +11,17 @@ import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbD
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 import { ThemeToggle } from '@/components/ThemeToggle'; // Assuming components alias is to root/components
 
-const CHAT_TITLE_MAX_LENGTH = 30;
+// const CHAT_TITLE_MAX_LENGTH = 30; // No longer strictly needed with AI titles, but good to keep in mind for DB schema or display
 
-function generateChatTitle(firstMessageContent) {
-  if (!firstMessageContent) return "New Chat";
-  const words = firstMessageContent.split(' ');
-  if (words.length <= 5) {
-    return firstMessageContent;
-  }
-  return words.slice(0, 5).join(' ') + '...';
-}
+// Old client-side title generation - to be removed
+// function generateChatTitle(firstMessageContent) {
+//   if (!firstMessageContent) return "New Chat";
+//   const words = firstMessageContent.split(' ');
+//   if (words.length <= 5) {
+//     return firstMessageContent;
+//   }
+//   return words.slice(0, 5).join(' ') + '...';
+// }
 
 export default function ChatPage() {
   const [chatSessions, setChatSessions] = useState([]);
@@ -54,28 +55,12 @@ export default function ChatPage() {
 
           await addMessage(aiMessageToSave);
           
-          const currentChat = chatSessions.find(c => c.id === activeChatId);
-          const currentMessagesFromHook = messages;
-          if (currentChat && currentChat.title === "New Chat" && currentMessagesFromHook.length >= 1) {
-            let userMessageForTitle = null;
-            if (currentMessagesFromHook.length >=1 && currentMessagesFromHook[currentMessagesFromHook.length - 2]?.role === 'user') {
-                 userMessageForTitle = currentMessagesFromHook[currentMessagesFromHook.length - 2];
-            } else if (currentMessagesFromHook.find(m => m.role === 'user')) {
-                 userMessageForTitle = currentMessagesFromHook.find(m => m.role === 'user');
-            }
+          // Title generation logic is moved to handleFormSubmit based on the first user message.
+          // The title will be updated there if it's a new chat.
 
-            if (userMessageForTitle) {
-                const newTitle = generateChatTitle(userMessageForTitle.content);
-                const updatedSessions = chatSessions.map(cs => 
-                    cs.id === activeChatId ? { ...cs, title: newTitle, timestamp: Date.now() } : cs
-                );
-                setChatSessions(updatedSessions.sort((a,b) => b.timestamp - a.timestamp));
-                await addChat({ id: activeChatId, title: newTitle, timestamp: Date.now() });
-            }
-          }
         } catch (e) {
-          console.error("Failed to save AI message or update title: ", e);
-          setDbError("Failed to save AI response or update chat title. Please try again.");
+          console.error("Failed to save AI message: ", e);
+          setDbError("Failed to save AI response. Please try again.");
         }
       }
     },
@@ -213,53 +198,75 @@ export default function ChatPage() {
     const userMessageContent = input;
     const currentChatId = activeChatId;
 
-    // Create the full user message object *before* calling append
     const userMessage = {
-        id: uuidv4(), // Generate client-side ID
+        id: uuidv4(),
         chatId: currentChatId,
         role: 'user',
         content: userMessageContent,
-        createdAt: new Date() // Generate client-side timestamp
+        createdAt: new Date()
     };
 
-    // Clear input before calling append, which might take time
     handleInputChange({ target: { value: '' } }); 
+    append(userMessage);
 
-    // Append expects just role and content, but we send the full object to get it back with potential enhancements.
-    // However, the actual saving will use our locally created 'userMessage'.
-    append(userMessage); // Pass the full user message object
-
-    // Save the locally created user message to DB immediately
     if (userMessage && currentChatId) {
         try {
-            await addMessage(userMessage); // Save the complete userMessage object
+            await addMessage(userMessage);
 
             const currentChat = chatSessions.find(c => c.id === currentChatId);
-            // Check if this is the first user message in a "New Chat"
-            // To do this, we'll look at the messages currently in the UI from useChat hook,
-            // *after* our new message has been added to it by append().
-            // Since append() updates messages optimistically and asynchronously,
-            // we might need a slight delay or rely on the fact that setMessages inside useChat is synchronous enough.
-            
-            // Let's refine the logic for title update. We check the actual DB messages or a fresh load.
-            // For simplicity here, we'll assume that if the title is "New Chat" and this is a user message,
-            // it's a good candidate for updating the title. A more robust check would involve counting user messages in DB.
-            const messagesInUI = messages; // This will include the new user message optimistically
+            const messagesInUI = [...messages, userMessage]; // Include the new user message for count
             const userMessagesInCurrentChatNow = messagesInUI.filter(m => m.role === 'user' && m.chatId === currentChatId);
-            
+
             if (currentChat && currentChat.title === "New Chat" && userMessagesInCurrentChatNow.length === 1) {
-                const newTitle = generateChatTitle(userMessage.content);
-                const updatedSessions = chatSessions.map(cs => 
-                    cs.id === currentChatId ? { ...cs, title: newTitle, timestamp: Date.now() } : cs
-                );
-                setChatSessions(updatedSessions.sort((a,b) => b.timestamp - a.timestamp));
-                await addChat({ id: currentChatId, title: newTitle, timestamp: Date.now() }); 
+                // Fire-and-forget promise for title generation
+                fetch('/api/generate-title', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ messageContent: userMessage.content }),
+                })
+                .then(async (titleResponse) => { // Add async here to use await inside
+                    if (titleResponse.ok) {
+                        const { title: newAiTitle } = await titleResponse.json();
+                        if (newAiTitle) {
+                            setChatSessions(prevSessions => {
+                                const updated = prevSessions.map(cs => 
+                                    cs.id === currentChatId ? { ...cs, title: newAiTitle, timestamp: Date.now() } : cs
+                                );
+                                return updated.sort((a,b) => b.timestamp - a.timestamp);
+                            });
+                            // Intentionally not awaiting addChat here to keep the primary flow non-blocking
+                            // However, this means DB update for title is fire-and-forget too.
+                            // If DB consistency for title is paramount and failure needs handling, this could be awaited
+                            // but that might re-introduce a slight delay or require more complex state management
+                            // For a "quiet" update, this is usually acceptable.
+                            addChat({ id: currentChatId, title: newAiTitle, timestamp: Date.now() })
+                                .catch(dbTitleError => console.error("Failed to save AI generated title to DB:", dbTitleError));
+                        } else {
+                             console.warn("AI title generation returned an empty title.");
+                        }
+                    } else {
+                        // Try to get error message from response, but don't let it crash
+                        let errorDetail = titleResponse.statusText;
+                        try {
+                            const errorData = await titleResponse.json();
+                            errorDetail = errorData?.error || errorDetail;
+                        } catch (e) {
+                            console.warn("Could not parse error JSON from title generation API");
+                        }
+                        console.error("Failed to generate title via API:", titleResponse.status, errorDetail);
+                        // Not setting dbError to keep title generation failure quiet
+                    }
+                })
+                .catch(titleError => {
+                    console.error("Error calling title generation API:", titleError);
+                    // Not setting dbError to keep title generation failure quiet
+                });
             }
         } catch (dbErr) {
-            console.error("Failed to save user message or update title:", dbErr);
+            console.error("Failed to save user message:", dbErr); // Clarified error source
             setDbError("Failed to save your message. Please try again.");
-            // Potentially roll back the optimistic UI update if DB save fails critically
-            // setMessages(messages.filter(m => m.id !== userMessage.id));
         }
     }
   };
