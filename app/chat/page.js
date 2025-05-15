@@ -5,7 +5,7 @@ import { useChat } from 'ai/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbDeleteChat } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
@@ -378,14 +378,19 @@ export default function ChatPage() {
           initial={{ x: '-100%' }}
           animate={{ x: 0 }}
           exit={{ x: '-100%' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="w-64 md:w-72 lg:w-80 flex flex-col border-r border-border bg-card shadow-lg h-full"
+          transition={{ type: 'spring', stiffness: 180, damping: 26, mass: 1.1 }}
+          className="w-64 md:w-72 lg:w-80 flex flex-col border-r border-border bg-card shadow-lg h-full relative"
         >
           <div className="px-4 py-5 flex justify-between items-center border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">Chat History</h2>
-            <Button variant="ghost" size="icon" onClick={sidebarNewChatClick} title="New Chat" className="hover:bg-primary/10 hover:text-primary">
-              <PlusSquare className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="icon" onClick={sidebarNewChatClick} title="New Chat" className="hover:bg-primary/10 hover:text-primary">
+                <PlusSquare className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} title="Close Sidebar" className="hidden md:inline-flex hover:bg-destructive/10 hover:text-destructive">
+                <PanelLeftClose className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
           <div className="p-3 border-b border-border"> {/* Slightly less padding for search bar container, consider removing border if input has enough emphasis */}
             <div className="relative">
@@ -483,8 +488,8 @@ export default function ChatPage() {
         <header className="px-6 py-5 border-b border-border shadow-sm flex items-center justify-between">
           <div className="flex items-center min-w-0"> {/* Added min-w-0 for title truncation */}
             {!isSidebarOpen && (
-                <Button variant="ghost" size="icon" className="mr-2 md:hidden hover:bg-primary/10 hover:text-primary" onClick={() => setIsSidebarOpen(true)}>
-                    <MessageSquare className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="mr-2 hover:bg-primary/10 hover:text-primary" onClick={() => setIsSidebarOpen(true)} title="Open Sidebar">
+                    <PanelLeftOpen className="h-5 w-5" />
                 </Button>
             )}
             <h1 className="text-xl md:text-2xl font-semibold truncate text-foreground">
@@ -635,8 +640,8 @@ export default function ChatPage() {
             initial={{ x: '100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="w-96 hidden md:flex flex-col h-full border-l border-border bg-card shadow-lg" // Changed bg-background to bg-card
+            transition={{ type: 'spring', stiffness: 180, damping: 26, mass: 1.1 }}
+            className="w-96 hidden md:flex flex-col h-full border-l border-border bg-card shadow-lg"
           >
             <MemoriesPanel 
               userId={mem0UserId} 
