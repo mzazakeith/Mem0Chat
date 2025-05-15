@@ -1,4 +1,4 @@
-# Memory Tester - AI Chat with Persistent Memory
+# Mem0Chat - AI Chat with Persistent Memory
 
 This project is a Next.js application demonstrating an AI chat interface with a persistent memory layer powered by [Mem0.ai](https://mem0.ai/). It allows users to have conversations with various AI models, where the AI can recall information from previous interactions to provide more personalized and context-aware responses.
 
@@ -90,7 +90,7 @@ The application uses the `mem0ai` JavaScript SDK to interact with the Mem0 Platf
     OPENROUTER_API_KEY="your_openrouter_api_key"
 
     # Google API Key 
-    # GOOGLE_GENERATIVE_AI_API_KEY="your_google_api_key"
+    GOOGLE_GENERATIVE_AI_API_KEY="your_google_api_key"
     ```
     *   Obtain your `MEM0_API_KEY` and `MEM0_PROJECT_ID` from your [Mem0.ai dashboard](https://mem0.ai/).
     *   Obtain your `OPENROUTER_API_KEY` from your [OpenRouter dashboard](https://openrouter.ai/).
