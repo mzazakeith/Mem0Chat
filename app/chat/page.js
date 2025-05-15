@@ -41,6 +41,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// ShadCN UI Drawer components
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+
 export default function ChatPage() {
   const [chatSessions, setChatSessions] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
@@ -61,6 +73,9 @@ export default function ChatPage() {
   // Derived state for available models for chat and title
   const [availableChatModels, setAvailableChatModels] = useState([]);
   const [availableTitleModels, setAvailableTitleModels] = useState([]);
+
+  // New state for model settings drawer
+  const [isModelSettingsDrawerOpen, setIsModelSettingsDrawerOpen] = useState(false);
 
   // Derived state for the current chat's memory setting (useChatMemories)
   const currentChatSession = chatSessions.find(cs => cs.id === activeChatId);
@@ -562,50 +577,77 @@ async onFinish(message) {
                 />
               </div>
             </div>
-            
-            {/* Global Chat Model Selector */}
-            <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="global-chat-model-select" className="text-sm font-medium text-foreground flex items-center">
-                    <Settings className="h-4 w-4 mr-2 text-primary" /> Default Chat Model
-                </Label>
-                <Select value={globalChatModelId} onValueChange={handleGlobalChatModelChange}>
-                    <SelectTrigger id="global-chat-model-select" className="w-full h-9 text-sm">
-                        <SelectValue placeholder="Select default chat model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectLabel>Available Chat Models</SelectLabel>
-                            {availableChatModels.map(model => (
-                                <SelectItem key={model.id} value={model.id} title={model.name}>
-                                    {model.name}
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-            </div>
 
-            {/* Global Title Model Selector */}
-            <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="global-title-model-select" className="text-sm font-medium text-foreground flex items-center">
-                    <Settings className="h-4 w-4 mr-2 text-primary" /> Default Title Model
-                </Label>
-                <Select value={globalTitleModelId} onValueChange={handleGlobalTitleModelChange}>
-                    <SelectTrigger id="global-title-model-select" className="w-full h-9 text-sm">
-                        <SelectValue placeholder="Select default title model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectLabel>Available Title Models</SelectLabel>
-                            {availableTitleModels.map(model => (
-                                <SelectItem key={model.id} value={model.id} title={model.name}>
-                                    {model.name}
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
-            </div>
+            {/* Drawer for Model Settings */}
+            <Drawer open={isModelSettingsDrawerOpen} onOpenChange={setIsModelSettingsDrawerOpen}>
+              <DrawerTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-sm font-medium">
+                  <Settings className="h-4 w-4 mr-2" /> Default Model Settings
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent data-vaul-drawer-direction="bottom"> {/* Specify direction if needed, or let auto-detect */} 
+                <div className="mx-auto w-full max-w-md p-4">
+                  <DrawerHeader className="pb-2 px-0">
+                    <DrawerTitle>Default Model Configuration</DrawerTitle>
+                    <DrawerDescription>
+                      Set your preferred default models for new chats and title generation.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    {/* Global Chat Model Selector */}
+                    <div className="flex flex-col space-y-1.5">
+                        <Label htmlFor="global-chat-model-select-drawer" className="text-sm font-medium text-foreground flex items-center">
+                           Chat Model
+                        </Label>
+                        <Select value={globalChatModelId} onValueChange={handleGlobalChatModelChange}>
+                            <SelectTrigger id="global-chat-model-select-drawer" className="w-full h-9 text-sm">
+                                <SelectValue placeholder="Select default chat model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectLabel>Available Chat Models</SelectLabel>
+                                    {availableChatModels.map(model => (
+                                        <SelectItem key={model.id} value={model.id} title={model.name}>
+                                            {model.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Global Title Model Selector */}
+                    <div className="flex flex-col space-y-1.5">
+                        <Label htmlFor="global-title-model-select-drawer" className="text-sm font-medium text-foreground flex items-center">
+                            Title Generation Model
+                        </Label>
+                        <Select value={globalTitleModelId} onValueChange={handleGlobalTitleModelChange}>
+                            <SelectTrigger id="global-title-model-select-drawer" className="w-full h-9 text-sm">
+                                <SelectValue placeholder="Select default title model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectLabel>Available Title Models</SelectLabel>
+                                    {availableTitleModels.map(model => (
+                                        <SelectItem key={model.id} value={model.id} title={model.name}>
+                                            {model.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                  </div>
+
+                  <DrawerFooter className="pt-2 px-0">
+                    <DrawerClose asChild>
+                      <Button variant="outline">Close</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </div>
+              </DrawerContent>
+            </Drawer>
             
             {/* Theme Toggle Row */}
             <div className="flex items-center justify-center w-full pt-2"> 
