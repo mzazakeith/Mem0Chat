@@ -20,7 +20,7 @@ export async function GET(req) {
     }
 
     const mem0 = getMem0Client();
-    const memories = await mem0.getAll({ userId });
+    const memories = await mem0.getAll({ user_id: userId });
     
     // Mem0's getAll typically returns an object like { results: [...] } or similar structure.
     // Ensure we are returning a structure the client expects, usually an array of memories.

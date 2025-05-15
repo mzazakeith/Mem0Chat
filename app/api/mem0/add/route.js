@@ -13,12 +13,13 @@ export async function POST(req) {
     const mem0 = getMem0Client();
 
     // 1. Add the new memory to Mem0.ai
-    // The add method might return information about the added memory, which we aren't directly using here
-    // but it's good to be aware of. The plan focuses on returning all memories after the add.
-    await mem0.add(content, { userId }); 
+    // The add method might return information about the added memory.
+    // Ensure user_id is passed in the options object.
+    // The content being added is a simple string from the request.
+    const addResponse = await mem0.add(content, { user_id: userId });
 
     // 2. Trigger Full Refresh: Fetch all memories for the user from Mem0.ai
-    const allMemories = await mem0.getAll({ userId });
+    const allMemories = await mem0.getAll({ user_id: userId });
 
     // 3. Return success response with all memories for the client to update its local store
     return NextResponse.json(allMemories, { status: 200 });

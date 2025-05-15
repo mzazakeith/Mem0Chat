@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'; // Assuming components a
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Brain } from 'lucide-react'; // Icon for memory toggle
+import MemoriesPanel from '@/components/MemoriesPanel'; // Import the new panel
 
 
 export default function ChatPage() {
@@ -24,6 +25,7 @@ export default function ChatPage() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [mem0UserId, setMem0UserId] = useState(null);
   const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true); // Default to true
+  const [useChatMemories, setUseChatMemories] = useState(false); // Default to false for per-chat memory usage
 
   const { messages, setMessages, input, handleInputChange, isLoading, error: apiError, reload, stop, append }
     = useChat({
@@ -70,7 +72,12 @@ export default function ChatPage() {
 
   const handleNewChat = useCallback(async (makeActive = true) => {
     const newChatId = uuidv4();
-    const newChatSession = { id: newChatId, title: 'New Chat', timestamp: Date.now() };
+    const newChatSession = { 
+      id: newChatId, 
+      title: 'New Chat', 
+      timestamp: Date.now(),
+      useChatMemories: false // Default for new chats
+    };
     try {
       await addChat(newChatSession); // addChat now uses put
       setChatSessions(prevSessions => [newChatSession, ...prevSessions].sort((a,b) => b.timestamp - a.timestamp));
@@ -139,6 +146,12 @@ export default function ChatPage() {
       if (activeChatId && !isInitialLoad) { // Only load if not initial (initial load or new chat handles it)
         setIsDbLoading(true);
         try {
+          // Load chat session details to get useChatMemories preference
+          const currentChatSession = chatSessions.find(cs => cs.id === activeChatId);
+          if (currentChatSession) {
+            setUseChatMemories(currentChatSession.useChatMemories || false);
+          }
+
           const savedMessages = await getMessagesForChat(activeChatId);
           const currentHookMessageIds = new Set(messages.map(m => m.id));
           const newMessagesFromDb = savedMessages.filter(dbMsg => !currentHookMessageIds.has(dbMsg.id));
@@ -181,6 +194,11 @@ export default function ChatPage() {
   const handleSelectChat = (chatId) => {
     if (isLoading) stop(); // Stop any ongoing stream if switching chats
     setActiveChatId(chatId);
+    // When selecting a chat, also load its useChatMemories preference
+    const selectedChat = chatSessions.find(cs => cs.id === chatId);
+    if (selectedChat) {
+      setUseChatMemories(selectedChat.useChatMemories || false);
+    }
   };
 
   const handleDeleteChat = async (chatIdToDelete, event) => {
@@ -219,9 +237,20 @@ export default function ChatPage() {
         content: userMessageContent,
         createdAt: new Date()
     };
+    
+    // Prepare the message payload for the AI SDK's append function
+    let messageToAppend = { ...userMessage };
+    
+    // Include memory-related flags if memories are active for this chat and globally
+    if (globalMemoriesActive && useChatMemories && mem0UserId) {
+      messageToAppend.experimental_customTool = {
+        userId: mem0UserId,
+        activateMemories: true // This flag will be picked up by the backend
+      };
+    }
 
     handleInputChange({ target: { value: '' } }); 
-    append(userMessage);
+    append(messageToAppend); // New way with potential memory context
 
     if (userMessage && currentChatId) {
         try {
@@ -295,6 +324,24 @@ export default function ChatPage() {
     // Here you might want to trigger a re-fetch or sync if memories were previously off and are now on
     // For now, it just updates the state and local storage. The MemoriesPanel component will react to this prop change.
     console.log("Global memories active:", checked);
+  };
+
+  const handleToggleChatMemories = async (checked) => {
+    if (!activeChatId) return;
+    setUseChatMemories(checked);
+    const currentChat = chatSessions.find(cs => cs.id === activeChatId);
+    if (currentChat) {
+      const updatedChatSession = { ...currentChat, useChatMemories: checked };
+      try {
+        await addChat(updatedChatSession); // addChat acts as an update here
+        setChatSessions(prev => prev.map(cs => cs.id === activeChatId ? updatedChatSession : cs));
+      } catch (e) {
+        console.error("Failed to update chat memory preference:", e);
+        setDbError("Failed to save memory preference for this chat.");
+        // Revert UI optimistically if needed
+        setUseChatMemories(!checked); 
+      }
+    }
   };
 
   return (
@@ -393,16 +440,46 @@ export default function ChatPage() {
       </AnimatePresence>
 
       {/* Main Chat Area */} 
-      <div className="flex flex-col flex-grow h-full">
-        <header className="p-4 border-b shadow-sm flex items-center">
+      <div className="flex flex-col flex-grow h-full min-w-0"> {/* Added min-w-0 here for flex-grow */}
+        <header className="p-4 border-b shadow-sm flex items-center justify-between">
+          <div className="flex items-center min-w-0"> {/* Added min-w-0 for title truncation */}
             {!isSidebarOpen && (
                 <Button variant="ghost" size="icon" className="mr-2 md:hidden" onClick={() => setIsSidebarOpen(true)}>
-                    <MessageSquare className="h-5 w-5" /> { /* Or Menu icon */ }
+                    <MessageSquare className="h-5 w-5" />
                 </Button>
             )}
-          <h1 className="text-xl md:text-2xl font-semibold truncate">
-            {activeChatId ? chatSessions.find(s => s.id === activeChatId)?.title : 'AI Chat'}
-          </h1>
+            <h1 className="text-xl md:text-2xl font-semibold truncate">
+              {activeChatId ? chatSessions.find(s => s.id === activeChatId)?.title : 'AI Chat'}
+            </h1>
+          </div>
+          {/* Per-Chat Memory Toggle - Styled like sidebar's global toggle */}
+          {activeChatId && (
+            <div className="flex items-center space-x-2 p-1 rounded"> {/* Mimic sidebar item padding/rounding for container */}
+              <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium">
+                <Brain className="h-5 w-5 mr-2 text-primary/80" /> {/* Icon */}
+                Chat Memories {/* Changed from "Use Memories" for consistency if desired, or keep "Use Memories" */}
+              </Label>
+              <div className="flex items-center space-x-2"> {/* Container for pill and switch */}
+                <span
+                  className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    useChatMemories
+                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {useChatMemories ? 'Active' : 'Inactive'}
+                </span>
+                <Switch
+                  id="chat-memory-toggle"
+                  checked={useChatMemories}
+                  onCheckedChange={handleToggleChatMemories}
+                  disabled={!globalMemoriesActive} // Disable if global memories are off
+                  title={globalMemoriesActive ? "Toggle memory usage for this chat" : "Global memories are disabled"}
+                  className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Using same colors as global for now
+                />
+              </div>
+            </div>
+          )}
         </header>
 
         <ScrollArea className="flex-grow p-4 space-y-4 min-h-0" ref={scrollAreaRef}>
@@ -504,6 +581,13 @@ export default function ChatPage() {
           </form>
         </footer>
       </div>
+
+      {/* Memories Panel Area */}
+      {globalMemoriesActive && mem0UserId && (
+        <div className="w-96 hidden md:flex flex-col h-full border-l bg-background">
+            <MemoriesPanel userId={mem0UserId} globalMemoriesActive={globalMemoriesActive} />
+        </div>
+      )}
     </div>
   );
 } 

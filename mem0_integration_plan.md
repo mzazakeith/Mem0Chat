@@ -162,24 +162,44 @@ Integrate Mem0.ai into the Next.js chat application to provide persistent, conte
 ## 6. Phase 5: Modify Existing Chat API (`app/api/chat/route.js`)
 
 ### 6.1. Update `POST` handler
--   Expect `userId` and `activateMemories` in the request body: `const { messages, userId, activateMemories } = await req.json();`
--   If `activateMemories` is true and `userId` is provided:
-    1.  Get `mem0Client`.
-    2.  Extract latest user message content for search: `const lastUserMessageContent = messages.filter(m => m.role === 'user').pop()?.content;`
-    3.  If `lastUserMessageContent`:
-        `const relevantMemories = await mem0Client.search(lastUserMessageContent, { userId });`
-    4.  Format `relevantMemories.results` into a string: `const memoriesStr = relevantMemories.results.map(entry => \`- ${entry.memory}\`).join('\\n');`
-    5.  Construct an enhanced system prompt:
-        ```javascript
-        const currentSystemPrompt = messages.find(m => m.role === 'system')?.content || "You are a helpful AI.";
-        const systemPromptWithMemories = `${currentSystemPrompt}
-        ---
-        Consider the following relevant user memories for context (if any):
-        ${memoriesStr || 'No specific memories found for this query.'}
-        ---
-        Current Conversation:`;
-        ```
-    6.  Modify the `messages` array passed to `streamText`: replace/update the system message or prepend memories in a structured way.
+-   **Destructure Payload:** Expect `messages` and `experimental_customTool` from `await req.json();`.
+-   **Memory Activation Check:**
+    -   Extract `activateMemories = experimental_customTool?.activateMemories` and `userId = experimental_customTool?.userId`.
+-   **System Prompt Preparation:**
+    -   Initialize `systemPromptContent` with a default (e.g., "You are a helpful AI.").
+    -   Check the incoming `messages` array for an existing system message. If found, use its content as the base for `systemPromptContent`.
+-   **If `activateMemories` is true and `userId` is provided:**
+    1.  Get `mem0Client` from `app/api/mem0/_utils.js`.
+    2.  Extract `lastUserMessageContent` from the last user message in the `messages` array.
+    3.  **Search Mem0:** If `lastUserMessageContent` exists, call:
+        `const relevantMemories = await mem0Client.search(lastUserMessageContent, { user_id: userId /*, limit: 3 */ });` (Consider adding a `limit` like 3-5).
+    4.  **Format Memories:**
+        -   If `relevantMemories.results` exist and have items:
+            -   Slice the results to a manageable number (e.g., `slice(0, 3)`).
+            -   Map results to a string: `const memoriesStr = relevantMemories.results.slice(0,3).map(entry => \`- ${entry.memory || entry.content}\`).join('\\n');` (Ensure field name `memory` or `content` matches SDK output).
+            -   Append to `systemPromptContent`:
+                ```
+                ---
+                Relevant User Memories:
+                ${memoriesStr}
+                ---
+                Please use these memories to inform your response to the current query.
+                Current Conversation:
+                ```
+        -   Else (no memories found):
+            -   Append to `systemPromptContent`:
+                ```
+                ---
+                No specific relevant user memories found for this query.
+                ---
+                Current Conversation:
+                ```
+    5.  **Error Handling (Mem0):** Wrap the Mem0 call in a try-catch. If an error occurs, log it and optionally append a note to `systemPromptContent` (e.g., "Error retrieving memories. Proceeding without them.") before the "Current Conversation:" line.
+-   **Modify `messages` Array:**
+    -   Create a mutable copy of the incoming `messages` (e.g., `finalMessages = [...messages]`).
+    -   If an existing system message was found, update its `content` in `finalMessages` with the new `systemPromptContent`.
+    -   Else (no existing system message), `unshift` a new system message `{ role: 'system', content: systemPromptContent }` to `finalMessages`.
+-   **Call `streamText`:** Use the `finalMessages` array (which now includes the memory-enhanced system prompt) for the `streamText` call to the LLM.
 
 ## 7. Phase 6: Refinements & Advanced Features (Future Considerations)
 

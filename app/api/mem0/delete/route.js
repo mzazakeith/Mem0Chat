@@ -13,13 +13,11 @@ export async function DELETE(req) {
     const mem0 = getMem0Client();
 
     // 1. Delete the memory from Mem0.ai
-    // Assuming mem0.delete() takes the memory ID directly.
-    // If it requires an object like { memory_id: memoryId }, this would need adjustment.
-    // Based on some Mem0 docs, `client.delete("memory-id-here")` is a pattern.
-    await mem0.delete(memoryId); 
+    // Pass memory_id and user_id in an options object.
+    await mem0.delete({ memory_id: memoryId, user_id: userId }); 
 
     // 2. Trigger Full Refresh: Fetch all remaining memories for the user from Mem0.ai
-    const allMemories = await mem0.getAll({ userId });
+    const allMemories = await mem0.getAll({ user_id: userId });
 
     // 3. Return success response with all remaining memories
     return NextResponse.json(allMemories, { status: 200 });

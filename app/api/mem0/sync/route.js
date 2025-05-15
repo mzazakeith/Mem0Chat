@@ -13,7 +13,7 @@ export async function POST(req) {
     const mem0 = getMem0Client();
 
     // Fetch all memories for the user from Mem0.ai
-    const allMemories = await mem0.getAll({ userId });
+    const allMemories = await mem0.getAll({ user_id: userId });
 
     // Return success response with all memories for the client to update its local store
     return NextResponse.json(allMemories, { status: 200 });

@@ -12,7 +12,7 @@ export async function GET(req) {
     }
 
     const mem0 = getMem0Client();
-    const searchResults = await mem0.search(query, { userId });
+    const searchResults = await mem0.search(query, { user_id: userId });
 
     // The plan notes: "(Should properly caching for semantic search results and return them when we have the same exact search again)"
     // This initial implementation does not include server-side caching for search results.
