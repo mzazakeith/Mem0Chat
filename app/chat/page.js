@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbDeleteChat } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 import { ThemeToggle } from '@/components/ThemeToggle'; // Assuming components alias is to root/components
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Brain } from 'lucide-react'; // Icon for memory toggle
 
 // const CHAT_TITLE_MAX_LENGTH = 30; // No longer strictly needed with AI titles, but good to keep in mind for DB schema or display
 
@@ -30,6 +33,8 @@ export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on larger screens, can be toggled
   const [isDbLoading, setIsDbLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [mem0UserId, setMem0UserId] = useState(null);
+  const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true); // Default to true
 
   const { messages, setMessages, input, handleInputChange, isLoading, error: apiError, reload, stop, append }
     = useChat({
@@ -115,6 +120,26 @@ export default function ChatPage() {
       setIsInitialLoad(false);
     }
   }, [activeChatId, isInitialLoad, handleNewChat]); // handleNewChat is now a dependency
+
+  useEffect(() => {
+    // Initialize Mem0 User ID
+    let userId = localStorage.getItem('mem0_user_id');
+    if (!userId) {
+      userId = uuidv4();
+      localStorage.setItem('mem0_user_id', userId);
+    }
+    setMem0UserId(userId);
+
+    // Initialize Global Memories Active setting
+    const storedGlobalMemoriesActive = localStorage.getItem('mem0_global_active');
+    if (storedGlobalMemoriesActive !== null) {
+      setGlobalMemoriesActive(JSON.parse(storedGlobalMemoriesActive));
+    } else {
+      // Default to true if not set, and store it
+      localStorage.setItem('mem0_global_active', JSON.stringify(true));
+      setGlobalMemoriesActive(true);
+    }
+  }, []);
 
   useEffect(() => {
     loadChatSessions();
@@ -275,6 +300,14 @@ export default function ChatPage() {
     await handleNewChat(true); // Always make active when user clicks new chat button
   }
 
+  const handleToggleGlobalMemories = (checked) => {
+    setGlobalMemoriesActive(checked);
+    localStorage.setItem('mem0_global_active', JSON.stringify(checked));
+    // Here you might want to trigger a re-fetch or sync if memories were previously off and are now on
+    // For now, it just updates the state and local storage. The MemoriesPanel component will react to this prop change.
+    console.log("Global memories active:", checked);
+  };
+
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Sidebar */} 
@@ -332,8 +365,37 @@ export default function ChatPage() {
           </ScrollArea>
 
           {/* Sidebar Footer */}
-          <div className="p-2 border-t mt-auto">
-            <ThemeToggle />
+          <div className="p-3 border-t mt-auto flex flex-col space-y-3">
+            {/* Global Memory Toggle Row */}
+            <div className="flex items-center justify-between w-full p-1 rounded">
+              <Label htmlFor="global-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium">
+                <Brain className="h-5 w-5 mr-2 text-primary/80" />
+                Global Memories
+              </Label>
+              <div className="flex items-center space-x-2">
+                <span
+                  className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                    globalMemoriesActive
+                      ? 'bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {globalMemoriesActive ? 'Active' : 'Inactive'}
+                </span>
+                <Switch
+                  id="global-memory-toggle"
+                  checked={globalMemoriesActive}
+                  onCheckedChange={handleToggleGlobalMemories}
+                  aria-label="Toggle global memories"
+                  className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200"
+                />
+              </div>
+            </div>
+            
+            {/* Theme Toggle Row */}
+            <div className="flex items-center justify-center w-full"> 
+              <ThemeToggle />
+            </div>
           </div>
 
           <Button className="md:hidden m-2" onClick={() => setIsSidebarOpen(false)}>Close</Button>
