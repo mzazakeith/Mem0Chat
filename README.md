@@ -5,6 +5,7 @@ This project is a Next.js application demonstrating an AI chat interface with a 
 ## Key Features
 
 *   **AI Chat Interface:**  Chat UI built with Next.js, React, Radix UI, and Tailwind CSS.
+*   **Chat History Sidebar:** Displays a list of past chat sessions, allowing users to easily navigate and revisit conversations. Stored locally using Dexie.js.
 *   **Persistent Memory:** Utilizes [Mem0.ai](https://github.com/mem0ai/mem0) as "The Memory Layer for your AI Agents," enabling the chat application to remember user preferences or anything the user needs it to.
 *   **Configurable AI Models:** Supports multiple AI models from Google (Gemini series) and OpenRouter (e.g., DeepSeek, Llama, Qwen). Users can set global default models and override them per chat session.
 *   **Client-Side Data Persistence:** Leverages Dexie.js (IndexedDB wrapper) to store chat sessions, messages, and a local cache of memories, enabling faster load times and some offline access.
