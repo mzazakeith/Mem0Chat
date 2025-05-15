@@ -14,17 +14,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Brain } from 'lucide-react'; // Icon for memory toggle
 
-// const CHAT_TITLE_MAX_LENGTH = 30; // No longer strictly needed with AI titles, but good to keep in mind for DB schema or display
-
-// Old client-side title generation - to be removed
-// function generateChatTitle(firstMessageContent) {
-//   if (!firstMessageContent) return "New Chat";
-//   const words = firstMessageContent.split(' ');
-//   if (words.length <= 5) {
-//     return firstMessageContent;
-//   }
-//   return words.slice(0, 5).join(' ') + '...';
-// }
 
 export default function ChatPage() {
   const [chatSessions, setChatSessions] = useState([]);
