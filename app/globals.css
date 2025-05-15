@@ -1,48 +1,48 @@
 /* Define raw HSL values for your palette */
 :root {
-  --my-bg-hsl: 27 15% 96%;
-  --my-fg-hsl: 27 14% 20%;
-  --my-card-hsl: 27 15% 90%;
-  --my-card-fg-hsl: 27 14% 20%; /* Explicit card foreground */
-  --my-popover-hsl: 27 15% 88%; /* Explicit popover background */
-  --my-popover-fg-hsl: 27 14% 20%; /* Explicit popover foreground */
-  --my-primary-hsl: 30 45% 42%;
-  --my-primary-fg-hsl: 30 20% 95%;
-  --my-secondary-hsl: 30 30% 52%;
-  --my-secondary-fg-hsl: 30 20% 95%;
-  --my-muted-hsl: 27 15% 80%;
-  --my-muted-fg-hsl: 27 14% 45%;
-  --my-accent-hsl: 30 35% 58%;
-  --my-accent-fg-hsl: 27 14% 20%;
-  --my-destructive-hsl: 0 75% 55%;
+  --my-bg-hsl: 27 15% 95%;
+  --my-fg-hsl: 27 14% 22%;
+  --my-card-hsl: 27 15% 88%;
+  --my-card-fg-hsl: 27 14% 22%; /* Explicit card foreground */
+  --my-popover-hsl: 27 15% 85%; /* Explicit popover background */
+  --my-popover-fg-hsl: 27 14% 22%; /* Explicit popover foreground */
+  --my-primary-hsl: 30 40% 37%;
+  --my-primary-fg-hsl: 30 25% 94%;
+  --my-secondary-hsl: 30 22% 49%;
+  --my-secondary-fg-hsl: 30 25% 94%;
+  --my-muted-hsl: 30 24% 70%;
+  --my-muted-fg-hsl: 27 14% 40%;
+  --my-accent-hsl: 30 24% 54%;
+  --my-accent-fg-hsl: 27 14% 22%;
+  --my-destructive-hsl: 0 70% 50%;
   --my-destructive-fg-hsl: 0 0% 100%;
-  --my-border-hsl: 27 15% 82%;
-  --my-input-hsl: 27 15% 92%;
-  --my-ring-hsl: 30 50% 50%;
+  --my-border-hsl: 27 15% 75%;
+  --my-input-hsl: 27 15% 80%;
+  --my-ring-hsl: 30 40% 45%;
   --my-radius-val: 0.75rem;
   --my-font-quicksand: "Quicksand", sans-serif;
 }
 
 .dark {
-  --my-bg-hsl: 27 10% 12%;
-  --my-fg-hsl: 27 10% 88%;
-  --my-card-hsl: 27 12% 18%;
-  --my-card-fg-hsl: 27 10% 88%; /* Explicit card foreground for dark */
-  --my-popover-hsl: 27 12% 16%; /* Explicit popover background for dark */
-  --my-popover-fg-hsl: 27 10% 88%; /* Explicit popover foreground for dark */
-  --my-primary-hsl: 30 35% 60%;
-  --my-primary-fg-hsl: 27 10% 12%;
-  --my-secondary-hsl: 30 30% 50%;
-  --my-secondary-fg-hsl: 27 10% 12%;
-  --my-muted-hsl: 27 12% 25%;
-  --my-muted-fg-hsl: 27 10% 60%;
-  --my-accent-hsl: 30 45% 45%;
-  --my-accent-fg-hsl: 27 10% 88%;
-  --my-destructive-hsl: 0 65% 50%;
+  --my-bg-hsl: 27 14% 15%;
+  --my-fg-hsl: 27 15% 85%;
+  --my-card-hsl: 27 14% 22%;
+  --my-card-fg-hsl: 27 15% 85%; /* Explicit card foreground for dark */
+  --my-popover-hsl: 27 14% 20%; /* Explicit popover background for dark */
+  --my-popover-fg-hsl: 27 15% 85%; /* Explicit popover foreground for dark */
+  --my-primary-hsl: 30 24% 54%;
+  --my-primary-fg-hsl: 27 14% 15%;
+  --my-secondary-hsl: 30 22% 49%;
+  --my-secondary-fg-hsl: 27 14% 15%;
+  --my-muted-hsl: 27 14% 28%;
+  --my-muted-fg-hsl: 27 15% 65%;
+  --my-accent-hsl: 30 40% 37%;
+  --my-accent-fg-hsl: 27 15% 85%;
+  --my-destructive-hsl: 0 60% 45%;
   --my-destructive-fg-hsl: 0 0% 95%;
-  --my-border-hsl: 27 12% 28%;
-  --my-input-hsl: 27 12% 15%;
-  --my-ring-hsl: 30 40% 65%;
+  --my-border-hsl: 27 14% 30%;
+  --my-input-hsl: 27 14% 25%;
+  --my-ring-hsl: 30 24% 60%;
 }
 
 @import "tailwindcss"; /* This imports theme, base, components, utilities */

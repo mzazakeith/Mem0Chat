@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // For error messages
+import MemoryStream from './MemoryStream'; // Import the new MemoryStream component
 
 // Lucide Icons
 import { 
@@ -223,15 +224,15 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
 
   if (!globalMemoriesActive) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BrainCircuit className="mr-2 h-5 w-5" /> Memory Panel
+      <Card className="h-full flex flex-col bg-primary text-card-foreground rounded-lg shadow-md">
+        <CardHeader className="p-4 border-b border-border">
+          <CardTitle className="flex items-center text-lg font-semibold text-foreground">
+            <BrainCircuit className="mr-2 h-5 w-5 text-primary" /> Memory Panel
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow flex flex-col items-center justify-center text-center">
+        <CardContent className="flex-grow flex flex-col items-center justify-center text-center p-4">
           <BrainCircuit className="w-16 h-16 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium">Memories Disabled</p>
+          <p className="text-lg font-semibold text-foreground">Memories Disabled</p>
           <p className="text-sm text-muted-foreground">Global memories are currently turned off.</p>
           <p className="text-xs text-muted-foreground mt-2">Enable them in the sidebar settings to use this feature.</p>
         </CardContent>
@@ -241,20 +242,23 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
   
   if (!userId) {
      return (
-      <Card className="h-full flex flex-col">
-        <CardHeader><CardTitle>Memory Panel</CardTitle></CardHeader>
-        <CardContent className="flex-grow flex items-center justify-center"> 
-          <Skeleton className="w-10 h-10 rounded-full mr-2" /> Initializing User for Memories...
+      <Card className="h-full flex flex-col bg-card text-card-foreground rounded-lg shadow-md">
+        <CardHeader className="p-4 border-b border-border">
+            <CardTitle className="text-lg font-semibold text-foreground">Memory Panel</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow flex items-center justify-center p-4"> 
+          <Skeleton className="w-10 h-10 rounded-full mr-3" /> 
+          <span className="text-muted-foreground">Initializing User for Memories...</span>
         </CardContent>
       </Card>
      );
   }
 
   return (
-    <Card className="h-full flex flex-col border-l-0 rounded-none shadow-md">
-      <CardHeader className="border-b">
+    <Card className="h-full flex flex-col bg-card text-card-foreground rounded-lg shadow-lg">
+      <CardHeader className="p-4 border-b border-border">
         <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center text-lg">
+          <CardTitle className="flex items-center text-lg font-semibold text-foreground">
             <BrainCircuit className="mr-2 h-5 w-5 text-primary" /> My Memories
           </CardTitle>
           <Button onClick={handleSyncMemories} variant="outline" size="sm" disabled={isLoadingSync || isLoadingList}>
@@ -266,22 +270,41 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
 
       <CardContent className="p-0 flex-grow flex flex-col overflow-hidden">
         {/* Add Memory Form */}
-        <form onSubmit={handleAddMemory} className="p-3 border-b space-y-2">
+        <form 
+          onSubmit={handleAddMemory} 
+          className="p-4 border-b border-border flex items-center space-x-2"
+        >
           <Textarea
-            placeholder="Type a new memory... (e.g., I prefer coffee over tea)"
+            placeholder="Write down a memory..."
             value={newMemoryInput}
             onChange={(e) => setNewMemoryInput(e.target.value)}
-            rows={2}
-            className="text-sm resize-none"
+            rows={1}
+            className="text-sm resize-none flex-grow rounded-md border border-input bg-transparent px-3 py-2 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isLoadingAdd}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // Basic check, actual validation is on button's disabled state
+                if (!isLoadingAdd && newMemoryInput.trim()) {
+                  handleAddMemory(e); 
+                }
+              }
+            }}
           />
-          <Button type="submit" size="sm" className="w-full" disabled={isLoadingAdd || !newMemoryInput.trim()}>
-            <Save className="mr-2 h-4 w-4" /> {isLoadingAdd ? 'Saving...' : 'Add Memory'}
+          <Button 
+            type="submit" 
+            size="default" // Default size to match textarea height
+            variant="default"
+            className="aspect-square p-2.5" // Make it square, adjust padding for icon
+            disabled={isLoadingAdd || !newMemoryInput.trim()}
+            title="Add Memory"
+          >
+            <PlusCircle className="h-5 w-5" />
           </Button>
         </form>
 
         {/* Search Form */}
-        <form onSubmit={handleSearchMemories} className="p-3 border-b flex items-center space-x-2">
+        <form onSubmit={handleSearchMemories} className="p-4 border-b border-border flex items-center space-x-2">
           <Input
             type="search"
             placeholder="Search memories..."
@@ -301,7 +324,7 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
         </form>
         
         {error && (
-          <div className="p-3">
+          <div className="p-4">
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
@@ -311,18 +334,23 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
         )}
 
         <ScrollArea className="flex-grow p-1">
-          <div className="p-2 space-y-2">
+          <div className="p-2 space-y-0">
             {isLoadingList && (!memories || memories.length === 0) && (
-              <>
+              <div className="p-4 space-y-3">
                 <Skeleton className="h-16 w-full rounded-md" />
                 <Skeleton className="h-16 w-full rounded-md" />
                 <Skeleton className="h-16 w-full rounded-md" />
-              </>
+              </div>
             )}
+            {/* Render Memory Stream */}
+            {!isLoadingList && displayedMemories.length > 0 && (
+              <MemoryStream memories={displayedMemories} onDelete={handleDeleteMemory} />
+            )}
+            {/* No memories / No search results message - handled within MemoriesPanel before calling MemoryStream */}
             {!isLoadingList && displayedMemories.length === 0 && !error && (
-              <div className="text-center py-10">
+              <div className="text-center py-10 px-4">
                 <ListX className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-                <p className="font-medium">
+                <p className="font-medium text-foreground">
                   {searchResults !== null ? "No memories found for your search." : "No memories yet."}
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -330,27 +358,6 @@ const MemoriesPanel = ({ userId, globalMemoriesActive }) => {
                 </p>
               </div>
             )}
-            {displayedMemories.map((memory) => (
-              <Card key={memory.id} className="shadow-sm hover:shadow-md transition-shadow text-sm">
-                <CardContent className="p-3">
-                  <p className="whitespace-pre-wrap break-words">{memory.memory || memory.content /* Mem0 API might use 'memory' or 'content' */}</p>
-                </CardContent>
-                <CardFooter className="p-3 border-t flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(memory.created_at || memory.createdAt || memory.timestamp)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-7 w-7"
-                    onClick={() => handleDeleteMemory(memory.id)}
-                    title="Delete memory"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
           </div>
         </ScrollArea>
       </CardContent>

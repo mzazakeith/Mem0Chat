@@ -5,7 +5,7 @@ import { useChat } from 'ai/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search } from 'lucide-react';
+import { Send, PlusSquare, Trash2, MessageSquare, Loader2, Search, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addChat, getAllChats, getMessagesForChat, addMessage, deleteChat as dbDeleteChat } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
@@ -27,6 +27,7 @@ export default function ChatPage() {
   const [globalMemoriesActive, setGlobalMemoriesActive] = useState(true); // Default to true
   const [useChatMemories, setUseChatMemories] = useState(false); // Default to false for per-chat memory usage
   const [chatSearchTerm, setChatSearchTerm] = useState(''); // New state for chat search
+  const [isMemoriesPanelOpen, setIsMemoriesPanelOpen] = useState(true); // New state for MemoriesPanel visibility
 
   const { messages, setMessages, input, handleInputChange, isLoading, error: apiError, reload, stop, append }
     = useChat({
@@ -354,15 +355,18 @@ export default function ChatPage() {
     if (currentChat) {
       const updatedChatSession = { ...currentChat, useChatMemories: checked };
       try {
-        await addChat(updatedChatSession); // addChat acts as an update here
+        await addChat(updatedChatSession); 
         setChatSessions(prev => prev.map(cs => cs.id === activeChatId ? updatedChatSession : cs));
       } catch (e) {
         console.error("Failed to update chat memory preference:", e);
         setDbError("Failed to save memory preference for this chat.");
-        // Revert UI optimistically if needed
         setUseChatMemories(!checked); 
       }
     }
+  };
+
+  const toggleMemoriesPanel = () => {
+    setIsMemoriesPanelOpen(prev => !prev);
   };
 
   return (
@@ -487,34 +491,41 @@ export default function ChatPage() {
               {activeChatId ? chatSessions.find(s => s.id === activeChatId)?.title : 'AI Chat'}
             </h1>
           </div>
-          {/* Per-Chat Memory Toggle - Styled like sidebar's global toggle */}
-          {activeChatId && (
-            <div className="flex items-center space-x-2 p-1 rounded">
-              <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
-                <Brain className="h-5 w-5 mr-2 text-primary" />
-                Chat Memories
-              </Label>
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                    useChatMemories
-                      ? 'bg-primary/20 text-primary' // Updated pill colors
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {useChatMemories ? 'Active' : 'Inactive'}
-                </span>
-                <Switch
-                  id="chat-memory-toggle"
-                  checked={useChatMemories}
-                  onCheckedChange={handleToggleChatMemories}
-                  disabled={!globalMemoriesActive} 
-                  title={globalMemoriesActive ? "Toggle memory usage for this chat" : "Global memories are disabled"}
-                  // className="data-[state=checked]:bg-purple-500 data-[state=unchecked]:bg-purple-200" // Default primary will be used
-                />
+          <div className="flex items-center space-x-3">
+            {/* Per-Chat Memory Toggle */}
+            {activeChatId && (
+              <div className="flex items-center space-x-2 p-1 rounded">
+                <Label htmlFor="chat-memory-toggle" className="flex items-center cursor-pointer text-sm font-medium text-foreground">
+                  <Brain className="h-5 w-5 mr-2 text-primary" />
+                  Chat Memories
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                      useChatMemories
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {useChatMemories ? 'Active' : 'Inactive'}
+                  </span>
+                  <Switch
+                    id="chat-memory-toggle"
+                    checked={useChatMemories}
+                    onCheckedChange={handleToggleChatMemories}
+                    disabled={!globalMemoriesActive} 
+                    title={globalMemoriesActive ? "Toggle memory usage for this chat" : "Global memories are disabled"}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {/* Memories Panel Toggle Button */}
+            {globalMemoriesActive && mem0UserId && (
+              <Button variant="ghost" size="icon" onClick={toggleMemoriesPanel} title={isMemoriesPanelOpen ? "Close Memories Panel" : "Open Memories Panel"} className="hover:bg-primary/10 hover:text-primary">
+                {isMemoriesPanelOpen ? <PanelRightClose className="h-5 w-5" /> : <PanelRightOpen className="h-5 w-5" />}
+              </Button>
+            )}
+          </div>
         </header>
 
         <ScrollArea className="flex-grow p-6 space-y-4 min-h-0" ref={scrollAreaRef}>
@@ -618,11 +629,23 @@ export default function ChatPage() {
       </div>
 
       {/* Memories Panel Area */}
-      {globalMemoriesActive && mem0UserId && (
-        <div className="w-96 hidden md:flex flex-col h-full border-l bg-background">
-            <MemoriesPanel userId={mem0UserId} globalMemoriesActive={globalMemoriesActive} />
-        </div>
-      )}
+      <AnimatePresence>
+        {globalMemoriesActive && mem0UserId && isMemoriesPanelOpen && (
+          <motion.div 
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="w-96 hidden md:flex flex-col h-full border-l border-border bg-card shadow-lg" // Changed bg-background to bg-card
+          >
+            <MemoriesPanel 
+              userId={mem0UserId} 
+              globalMemoriesActive={globalMemoriesActive} 
+              togglePanel={toggleMemoriesPanel} // Pass the toggle function
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
