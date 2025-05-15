@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { streamText, smoothStream } from 'ai';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +10,12 @@ export async function POST(req) {
 
   try {
     const result = streamText({
-      model: google('gemini-1.5-flash'), 
+      model: google('gemini-2.0-flash', { useSearchGrounding: true }), 
       messages,
+      experimental_transform: smoothStream({
+        delayInMs: 10, // Default delay, can be adjusted
+        chunking: 'word' // Default chunking, streams word by word
+      }),
       // Optional: Add error handling for the stream itself if needed
       // onError: (error) => { console.error("Streaming Error:", error); }
     });

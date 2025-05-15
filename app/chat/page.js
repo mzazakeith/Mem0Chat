@@ -354,7 +354,7 @@ export default function ChatPage() {
           </h1>
         </header>
 
-        <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-4 space-y-4 min-h-0" ref={scrollAreaRef}>
           <div className="flex flex-col space-y-4 pb-4">
             {isDbLoading && messages.length === 0 && (
                 <div className="flex-grow flex items-center justify-center h-full min-h-[calc(100vh-250px)]">
