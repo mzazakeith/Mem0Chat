@@ -1,102 +1,59 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import Link from 'next/link';
+import { MessageSquareText, Brain, Zap } from 'lucide-react'; // Or other relevant icons
+
+export default function HomePage() {
   return (
-    <div className="bg-background grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-6 font-sans">
+      <main className="text-center space-y-8 max-w-2xl">
+        <header className="space-y-4">
+          <div className="inline-block p-4 bg-primary/10 rounded-full">
+            <MessageSquareText size={48} className="text-primary" />
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight text-foreground">
+            Welcome to <span className="text-primary">Mem0Chat</span>
+          </h1>
+          <p className="text-xl text-muted-foreground leading-relaxed">
+            Experience intelligent conversations with an AI that remembers you. Powered by Mem0.ai, Mem0Chat offers a personalized chat experience like never before.
+          </p>
+        </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          <div className="bg-card p-6 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center mb-3">
+              <Brain size={24} className="text-primary mr-3" />
+              <h3 className="text-lg font-semibold text-card-foreground">Persistent Memory</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Engage in conversations where the AI recalls past details and preferences, thanks to Mem0.ai integration.
+            </p>
+          </div>
+          <div className="bg-card p-6 rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center mb-3">
+              <Zap size={24} className="text-primary mr-3" />
+              <h3 className="text-lg font-semibold text-card-foreground">Dynamic & Configurable</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Choose from various AI models and enjoy a chat experience that adapts to your needs, with features like automatic title generation.
+            </p>
+          </div>
+        </section>
+
+        <div>
+          <Link
+            href="/chat"
+            className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-primary-foreground bg-primary rounded-lg shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors duration-150"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Start Chatting
+          </Link>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="py-8 mt-12 text-center">
+        <p className="text-sm text-muted-foreground">
+          Mem0Chat - The future of personalized AI conversations.
+        </p>
       </footer>
     </div>
   );
